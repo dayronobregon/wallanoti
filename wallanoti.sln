@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Apps", "Apps", "{27B9D040-BC85-41EE-A2B2-99F11972D1A7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Src", "Src", "{15A82FA4-E1F0-45FA-ACD1-EA5F85559AED}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{4D2EF2F6-D449-49ED-8D13-A79AE5823466}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Src", "Src", "{B427807F-EED3-40AC-A986-B41FE3B8F7FC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WallapopNotification", "WallapopNotification\WallapopNotification.csproj", "{74B1361E-4609-47C7-ADB8-84328117B7B0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{D471EA23-C7B4-4BB2-AE62-244B61878086}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{74B1361E-4609-47C7-ADB8-84328117B7B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74B1361E-4609-47C7-ADB8-84328117B7B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74B1361E-4609-47C7-ADB8-84328117B7B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74B1361E-4609-47C7-ADB8-84328117B7B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D471EA23-C7B4-4BB2-AE62-244B61878086}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D471EA23-C7B4-4BB2-AE62-244B61878086}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D471EA23-C7B4-4BB2-AE62-244B61878086}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D471EA23-C7B4-4BB2-AE62-244B61878086}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B427807F-EED3-40AC-A986-B41FE3B8F7FC} = {4D2EF2F6-D449-49ED-8D13-A79AE5823466}
+		{74B1361E-4609-47C7-ADB8-84328117B7B0} = {15A82FA4-E1F0-45FA-ACD1-EA5F85559AED}
+		{D471EA23-C7B4-4BB2-AE62-244B61878086} = {27B9D040-BC85-41EE-A2B2-99F11972D1A7}
+	EndGlobalSection
+EndGlobal

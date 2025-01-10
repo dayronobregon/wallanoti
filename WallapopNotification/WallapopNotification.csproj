@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.18.2" />
+      <PackageReference Include="Dapper" Version="2.1.35" />
+      <PackageReference Include="MediatR" Version="12.4.1" />
+      <PackageReference Include="MySql.Data" Version="9.1.0" />
+      <PackageReference Include="RabbitMQ.Client" Version="7.0.0" />
+      <PackageReference Include="Telegram.Bot" Version="22.2.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Shared\" />
+      <Folder Include="User\" />
+    </ItemGroup>
+
+</Project>
