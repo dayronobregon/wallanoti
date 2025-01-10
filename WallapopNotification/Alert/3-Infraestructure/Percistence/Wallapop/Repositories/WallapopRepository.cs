@@ -34,11 +34,6 @@ public sealed class WallapopRepository : IWallapopRepository
         request.Content = content;
         var response = await _client.SendAsync(request);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new Exception("Error");
-        }
-
         var responseContent = await response.Content.ReadFromJsonAsync<WallapopResponse>();
 
         return responseContent?.Data.Section.Payload.Items.Select(x => new Item
