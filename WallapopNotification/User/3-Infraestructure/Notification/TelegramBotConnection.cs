@@ -10,7 +10,7 @@ public sealed class TelegramBotConnection
 
     public TelegramBotConnection(IConfiguration configuration)
     {
-        _token = configuration.GetValue<string>("Telegram:BotToken");
+        _token = configuration.GetValue<string>("TelegramBotToken");
     }
 
     public TelegramBotClient BotClient()
