@@ -46,7 +46,7 @@ public static class Infrastructure
 
         services.AddAzureClients(builder =>
         {
-            builder.AddServiceBusClient(configuration.GetConnectionString("ServiceBusConnection"));
+            builder.AddServiceBusClient(configuration.GetValue<string>("ServiceBusConnection"));
         });
 
 
