@@ -20,7 +20,7 @@ public sealed class Notification
         message.Append($"<b>Price:</b> {Price.CurrentPrice}\n");
         message.Append($"<b>Location:</b> {Location}\n");
         message.Append('\n'); // Agregar una línea en blanco
-        message.Append($"<a href='{Link}'>{Title}</a>\n");
+        message.Append($"<a href='{Link.Url}'>{Title}</a>\n");
 
         return message.ToString();
     }
