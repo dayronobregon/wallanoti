@@ -5,7 +5,7 @@ using WallapopNotification.Alert._1_Domain.Models;
 using WallapopNotification.Alert._2_Application.CreateAlert;
 using WallapopNotification.User._3_Infraestructure.Notification;
 
-namespace Client.Bot.Handlers.OnMessage;
+namespace Client.Bot.Handlers.MessageResolver;
 
 public sealed class NewAlertTelegramCommandResolver
 {
@@ -21,7 +21,7 @@ public sealed class NewAlertTelegramCommandResolver
 
     public async Task Execute(Message message)
     {
-        await _botConnection.BotClient().SendMessage(message.Chat.Id,
+        await _botConnection.Client().SendMessage(message.Chat.Id,
             "Estamos creando la alerta");
 
         using var scope = _scopeFactory.CreateScope();
@@ -32,7 +32,7 @@ public sealed class NewAlertTelegramCommandResolver
 
         if (@params is not { Count: 3 })
         {
-            await _botConnection.BotClient().SendMessage(message.Chat.Id,
+            await _botConnection.Client().SendMessage(message.Chat.Id,
                 "El comando /alert debe tener la siguiente estructura: /alert, nombrealerta, urlWallapop");
             return;
         }
@@ -43,14 +43,14 @@ public sealed class NewAlertTelegramCommandResolver
 
         if (AlertEntity.ValidUrl(alertUrl) == false)
         {
-            await _botConnection.BotClient().SendMessage(message.Chat.Id,
+            await _botConnection.Client().SendMessage(message.Chat.Id,
                 "No es una url valida. Copia la url de búsqueda que has hecho en Wallapop");
             return;
         }
 
         await mediator.Send(new CreateAlertCommand(message.Chat.Id, alertName, alertUrl));
 
-        await _botConnection.BotClient().SendMessage(message.Chat.Id,
+        await _botConnection.Client().SendMessage(message.Chat.Id,
             $"Alerta {alertName} creada");
     }
 }

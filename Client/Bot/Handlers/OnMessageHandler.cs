@@ -1,17 +1,21 @@
+using Client.Bot.Handlers.MessageResolver;
 using Telegram.Bot.Types;
 
-namespace Client.Bot.Handlers.OnMessage;
+namespace Client.Bot.Handlers;
 
 public sealed class OnMessageHandler
 {
     private readonly StartTelegramCommandResolver _startTelegramCommandResolver;
     private readonly NewAlertTelegramCommandResolver _newAlertTelegramCommandResolver;
+    private readonly ListTelegramCommandResolver _listTelegramCommandResolver;
 
     public OnMessageHandler(StartTelegramCommandResolver startTelegramCommandResolver,
-        NewAlertTelegramCommandResolver newAlertTelegramCommandResolver)
+        NewAlertTelegramCommandResolver newAlertTelegramCommandResolver,
+        ListTelegramCommandResolver listTelegramCommandResolver)
     {
         _startTelegramCommandResolver = startTelegramCommandResolver;
         _newAlertTelegramCommandResolver = newAlertTelegramCommandResolver;
+        _listTelegramCommandResolver = listTelegramCommandResolver;
     }
 
     public async Task Execute(Message message)
@@ -25,6 +29,9 @@ public sealed class OnMessageHandler
                 return;
             case NewAlertTelegramCommandResolver.Command:
                 await _newAlertTelegramCommandResolver.Execute(message);
+                break;
+            case ListTelegramCommandResolver.Command:
+                await _listTelegramCommandResolver.Execute(message);
                 break;
         }
     }

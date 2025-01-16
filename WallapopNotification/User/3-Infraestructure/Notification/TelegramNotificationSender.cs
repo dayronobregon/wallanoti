@@ -16,7 +16,7 @@ public class TelegramNotificationSender : INotificationSender
 
     public async Task Notify(_1_Domain.Models.Notification notification)
     {
-        var botClient = _telegramConnection.BotClient();
+        var botClient = _telegramConnection.Client();
 
         // Crear una lista de InputMediaPhoto para las imágenes
         var images = new List<IAlbumInputMedia>();

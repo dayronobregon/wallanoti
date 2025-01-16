@@ -1,5 +1,6 @@
 using Client.Bot.Configurations;
-using Client.Bot.Handlers.OnMessage;
+using Client.Bot.Handlers;
+using Client.Bot.Handlers.MessageResolver;
 using WallapopNotification.Alert._1_Domain.Events;
 using WallapopNotification.Alert._2_Application.SearchAlertInWallapop;
 using WallapopNotification.Shared._1_Domain.Events;
@@ -21,8 +22,10 @@ public static class Application
         services.AddScoped<TelegramBotConnection>();
         services.AddScoped<TelegramBot>();
         services.AddScoped<OnMessageHandler>();
+        services.AddScoped<OnUpdateHandler>();
         services.AddScoped<StartTelegramCommandResolver>();
         services.AddScoped<NewAlertTelegramCommandResolver>();
+        services.AddScoped<ListTelegramCommandResolver>();
 
         return services;
     }

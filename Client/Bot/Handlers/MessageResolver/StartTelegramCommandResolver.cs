@@ -4,7 +4,7 @@ using Telegram.Bot.Types;
 using WallapopNotification.User._2_Application.CreateUser;
 using WallapopNotification.User._3_Infraestructure.Notification;
 
-namespace Client.Bot.Handlers.OnMessage;
+namespace Client.Bot.Handlers.MessageResolver;
 
 public sealed class StartTelegramCommandResolver
 {
@@ -20,7 +20,7 @@ public sealed class StartTelegramCommandResolver
 
     public async Task Execute(Message message)
     {
-        await _botConnection.BotClient().SendMessage(message.Chat.Id,
+        await _botConnection.Client().SendMessage(message.Chat.Id,
             "Hola bienvenido a Wallapop Notification. Estamos preparando todo...solo serán unos segundos");
 
         using var scope = _scopeFactory.CreateScope();
@@ -28,7 +28,7 @@ public sealed class StartTelegramCommandResolver
 
         await mediator.Send(new CreateUserCommand(message.Chat.Id, message.Chat.Username));
 
-        await _botConnection.BotClient().SendMessage(message.Chat.Id,
+        await _botConnection.Client().SendMessage(message.Chat.Id,
             "Ya puedes crear alertas con el comando /alert. Ejemplo: /alert, Televisor LG 55 pulgadas, https://es.wallapop.com/item/televisor-lg-55-pulgadas-123456789");
     }
 }

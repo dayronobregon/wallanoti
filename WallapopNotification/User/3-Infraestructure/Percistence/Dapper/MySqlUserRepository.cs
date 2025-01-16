@@ -13,21 +13,21 @@ public sealed class MySqlUserRepository : DapperRepository, IUserRepository
 
     public async Task Add(_1_Domain.Models.User newUser)
     {
-        const string query = "INSERT INTO Users (Id, UserName) VALUES (@Id, @UserName);";
+        const string query = "INSERT INTO users (Id, UserName) VALUES (@Id, @UserName);";
 
         await DbConnection.ExecuteAsync(query, newUser);
     }
 
     public _1_Domain.Models.User Find(Guid userId)
     {
-        const string query = "SELECT * FROM Users WHERE Id = @Id;";
+        const string query = "SELECT * FROM users WHERE Id = @Id;";
 
         return DbConnection.QueryFirst<_1_Domain.Models.User>(query, new { Id = userId });
     }
 
     public Task Save(_1_Domain.Models.User user)
     {
-        const string query = "UPDATE Users SET UserName = @UserName, WHERE Id = @Id;";
+        const string query = "UPDATE users SET UserName = @UserName, WHERE Id = @Id;";
 
         return DbConnection.ExecuteAsync(query, new { user.Id, user.UserName });
     }
