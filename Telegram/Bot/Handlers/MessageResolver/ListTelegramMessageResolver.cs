@@ -6,14 +6,14 @@ using WallapopNotification.User._3_Infraestructure.Notification;
 
 namespace Telegram.Bot.Handlers.MessageResolver;
 
-public sealed class ListTelegramCommandResolver
+public sealed class ListTelegramMessageResolver : IMessageResolver
 {
     public const string Command = "/list";
 
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TelegramBotConnection _botConnection;
 
-    public ListTelegramCommandResolver(IServiceScopeFactory scopeFactory, TelegramBotConnection botConnection)
+    public ListTelegramMessageResolver(IServiceScopeFactory scopeFactory, TelegramBotConnection botConnection)
     {
         _scopeFactory = scopeFactory;
         _botConnection = botConnection;

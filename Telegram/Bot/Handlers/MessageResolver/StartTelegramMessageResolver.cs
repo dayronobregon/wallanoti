@@ -5,17 +5,18 @@ using WallapopNotification.User._3_Infraestructure.Notification;
 
 namespace Telegram.Bot.Handlers.MessageResolver;
 
-public sealed class StartTelegramCommandResolver
+public sealed class StartTelegramMessageResolver : IMessageResolver
 {
     public const string Command = "/start";
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TelegramBotConnection _botConnection;
 
-    public StartTelegramCommandResolver(IServiceScopeFactory scopeFactory, TelegramBotConnection botConnection)
+    public StartTelegramMessageResolver(IServiceScopeFactory scopeFactory, TelegramBotConnection botConnection)
     {
         _scopeFactory = scopeFactory;
         _botConnection = botConnection;
     }
+
 
     public async Task Execute(Message message)
     {

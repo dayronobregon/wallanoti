@@ -4,11 +4,11 @@ using WallapopNotification.Alert._2_Application.DeleteAlert;
 
 namespace Telegram.Bot.Handlers;
 
-public sealed class OnUpdateHandler
+public sealed class OnUpdateHandlerFactory
 {
     private readonly IServiceScopeFactory _scopeFactory;
 
-    public OnUpdateHandler(IServiceScopeFactory scopeFactory)
+    public OnUpdateHandlerFactory(IServiceScopeFactory scopeFactory)
     {
         _scopeFactory = scopeFactory;
     }
