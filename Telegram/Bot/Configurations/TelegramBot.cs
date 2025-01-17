@@ -9,16 +9,16 @@ namespace Telegram.Bot.Configurations;
 public sealed class TelegramBot
 {
     private readonly TelegramBotConnection _telegramBotConnection;
-    private readonly OnMessageHandler _onMessageHandler;
-    private readonly OnUpdateHandler _onUpdateHandler;
+    private readonly OnMessageHandlerFactory _onMessageHandlerFactory;
+    private readonly OnUpdateHandlerFactory _onUpdateHandlerFactory;
 
     public TelegramBot(TelegramBotConnection telegramBotConnection,
-        OnMessageHandler onMessageHandler,
-        OnUpdateHandler onUpdateHandler)
+        OnMessageHandlerFactory onMessageHandlerFactory,
+        OnUpdateHandlerFactory onUpdateHandlerFactory)
     {
         _telegramBotConnection = telegramBotConnection;
-        _onMessageHandler = onMessageHandler;
-        _onUpdateHandler = onUpdateHandler;
+        _onMessageHandlerFactory = onMessageHandlerFactory;
+        _onUpdateHandlerFactory = onUpdateHandlerFactory;
     }
 
     public async Task Start()
@@ -33,12 +33,16 @@ public sealed class TelegramBot
 
     private Task OnUpdate(Update update)
     {
-        return _onUpdateHandler.Execute(update);
+        return _onUpdateHandlerFactory.Execute(update);
     }
 
     private async Task OnMessage(Message message, UpdateType type)
     {
-        await _onMessageHandler.Execute(message);
+        var command = message.Text?.ToLower().Split(",").FirstOrDefault();
+
+        var resolver = _onMessageHandlerFactory.Handle(command);
+
+        await resolver.Execute(message);
     }
 
     public async Task Stop()
@@ -55,8 +59,8 @@ public sealed class TelegramBot
         var commands = await botClient.GetMyCommands();
 
         if (commands.Any(x =>
-                x.Command is StartTelegramCommandResolver.Command or NewAlertTelegramCommandResolver.Command
-                    or ListTelegramCommandResolver.Command))
+                x.Command is StartTelegramMessageResolver.Command or NewAlertTelegramMessageResolver.Command
+                    or ListTelegramMessageResolver.Command))
         {
             return;
         }
@@ -65,8 +69,8 @@ public sealed class TelegramBot
 
         await botClient.SetMyCommands(new List<BotCommand>
         {
-            new() { Command = NewAlertTelegramCommandResolver.Command, Description = "Crea una nueva alerta" },
-            new() { Command = ListTelegramCommandResolver.Command, Description = "Lista las alertas" },
+            new() { Command = NewAlertTelegramMessageResolver.Command, Description = "Crea una nueva alerta" },
+            new() { Command = ListTelegramMessageResolver.Command, Description = "Lista las alertas" },
         });
     }
 }

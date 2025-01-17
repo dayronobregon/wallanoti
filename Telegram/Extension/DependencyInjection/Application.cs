@@ -21,11 +21,11 @@ public static class Application
         services.AddScoped<AlertSearcher>();
         services.AddScoped<TelegramBotConnection>();
         services.AddScoped<TelegramBot>();
-        services.AddScoped<OnMessageHandler>();
-        services.AddScoped<OnUpdateHandler>();
-        services.AddScoped<StartTelegramCommandResolver>();
-        services.AddScoped<NewAlertTelegramCommandResolver>();
-        services.AddScoped<ListTelegramCommandResolver>();
+        services.AddScoped<OnMessageHandlerFactory>();
+        services.AddScoped<OnUpdateHandlerFactory>();
+        services.AddScoped<StartTelegramMessageResolver>();
+        services.AddScoped<NewAlertTelegramMessageResolver>();
+        services.AddScoped<ListTelegramMessageResolver>();
 
         return services;
     }
