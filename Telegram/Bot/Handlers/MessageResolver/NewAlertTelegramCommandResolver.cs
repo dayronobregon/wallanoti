@@ -1,11 +1,10 @@
 using MediatR;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using WallapopNotification.Alert._1_Domain.Models;
 using WallapopNotification.Alert._2_Application.CreateAlert;
 using WallapopNotification.User._3_Infraestructure.Notification;
 
-namespace Client.Bot.Handlers.MessageResolver;
+namespace Telegram.Bot.Handlers.MessageResolver;
 
 public sealed class NewAlertTelegramCommandResolver
 {

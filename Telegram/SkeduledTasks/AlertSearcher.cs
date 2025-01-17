@@ -1,7 +1,6 @@
 using Coravel.Invocable;
-using WallapopNotification.Alert._2_Application.SearchAlertInWallapop;
 
-namespace Client.SkeduledTasks;
+namespace Telegram.SkeduledTasks;
 
 public sealed class AlertSearcher : IInvocable
 {

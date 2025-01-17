@@ -10,7 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Src", "Src", "{B427807F-EED
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WallapopNotification", "WallapopNotification\WallapopNotification.csproj", "{74B1361E-4609-47C7-ADB8-84328117B7B0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{D471EA23-C7B4-4BB2-AE62-244B61878086}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Telegram", "Telegram\Telegram.csproj", "{D471EA23-C7B4-4BB2-AE62-244B61878086}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

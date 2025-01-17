@@ -1,10 +1,9 @@
 using MediatR;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using WallapopNotification.User._2_Application.CreateUser;
 using WallapopNotification.User._3_Infraestructure.Notification;
 
-namespace Client.Bot.Handlers.MessageResolver;
+namespace Telegram.Bot.Handlers.MessageResolver;
 
 public sealed class StartTelegramCommandResolver
 {

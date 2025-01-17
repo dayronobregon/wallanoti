@@ -1,6 +1,6 @@
-using Client.Bot.Configurations;
+using Telegram.Bot.Configurations;
 
-namespace Client.HostedServices;
+namespace Telegram.HostedServices;
 
 public sealed class TelegramHS : IHostedService
 {
