@@ -2,7 +2,7 @@ using MediatR;
 using Telegram.Bot.Types;
 using WallapopNotification.Alert._2_Application.DeleteAlert;
 
-namespace Client.Bot.Handlers;
+namespace Telegram.Bot.Handlers;
 
 public sealed class OnUpdateHandler
 {

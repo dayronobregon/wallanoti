@@ -1,6 +1,6 @@
-using Client.Bot.Configurations;
-using Client.Bot.Handlers;
-using Client.Bot.Handlers.MessageResolver;
+using Telegram.Bot.Configurations;
+using Telegram.Bot.Handlers;
+using Telegram.Bot.Handlers.MessageResolver;
 using WallapopNotification.Alert._1_Domain.Events;
 using WallapopNotification.Alert._2_Application.SearchAlertInWallapop;
 using WallapopNotification.Shared._1_Domain.Events;
@@ -8,7 +8,7 @@ using WallapopNotification.User._2_Application.CreateUser;
 using WallapopNotification.User._2_Application.NotifyUser;
 using WallapopNotification.User._3_Infraestructure.Notification;
 
-namespace Client.Extension.DependencyInjection;
+namespace Telegram.Extension.DependencyInjection;
 
 public static class Application
 {

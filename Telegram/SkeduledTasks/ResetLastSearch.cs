@@ -2,7 +2,7 @@ using System.Data;
 using Coravel.Invocable;
 using Dapper;
 
-namespace Client.SkeduledTasks;
+namespace Telegram.SkeduledTasks;
 
 public sealed class ResetLastSearch : IInvocable
 {

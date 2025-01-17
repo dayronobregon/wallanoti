@@ -1,11 +1,10 @@
-using Client.Bot.Handlers;
-using Client.Bot.Handlers.MessageResolver;
-using Telegram.Bot;
+using Telegram.Bot.Handlers;
+using Telegram.Bot.Handlers.MessageResolver;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using WallapopNotification.User._3_Infraestructure.Notification;
 
-namespace Client.Bot.Configurations;
+namespace Telegram.Bot.Configurations;
 
 public sealed class TelegramBot
 {

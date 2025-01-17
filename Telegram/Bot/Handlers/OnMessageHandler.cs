@@ -1,7 +1,7 @@
-using Client.Bot.Handlers.MessageResolver;
+using Telegram.Bot.Handlers.MessageResolver;
 using Telegram.Bot.Types;
 
-namespace Client.Bot.Handlers;
+namespace Telegram.Bot.Handlers;
 
 public sealed class OnMessageHandler
 {

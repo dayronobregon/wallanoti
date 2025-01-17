@@ -12,7 +12,7 @@ using WallapopNotification.User._1_Domain.Repositories;
 using WallapopNotification.User._3_Infraestructure.Notification;
 using WallapopNotification.User._3_Infraestructure.Percistence.Dapper;
 
-namespace Client.Extension.DependencyInjection;
+namespace Telegram.Extension.DependencyInjection;
 
 public static class Infrastructure
 {
