@@ -28,11 +28,11 @@ app.Services.UseScheduler(scheduler =>
 {
     scheduler
         .Schedule<AlertSearcher>()
-        .EveryTenSeconds();
+        .EveryThirtySeconds();
 
     scheduler
         .Schedule<ResetLastSearch>()
-        .DailyAt(0, 0);
+        .DailyAt(0, 1);
 });
 
 new DomainEventConsumer(app.Services.GetRequiredService<ServiceBusClient>(), app.Services).Consume();
