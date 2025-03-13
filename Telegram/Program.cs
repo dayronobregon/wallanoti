@@ -32,7 +32,7 @@ app.Services.UseScheduler(scheduler =>
 
     scheduler
         .Schedule<ResetLastSearch>()
-        .DailyAt(0, 1);
+        .Monthly();
 });
 
 new DomainEventConsumer(app.Services.GetRequiredService<ServiceBusClient>(), app.Services).Consume();
