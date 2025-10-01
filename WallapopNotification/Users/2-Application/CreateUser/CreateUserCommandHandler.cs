@@ -23,8 +23,11 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
 
         var events = newUser.PullDomainEvents();
 
-        await _userRepository.Add(newUser);
-
+        if (await _userRepository.Exists(newUser) == false)
+        {
+            await _userRepository.Add(newUser);
+        }
+        
         await _eventBus.Publish(events);
     }
 }

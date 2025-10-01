@@ -31,7 +31,12 @@ public sealed class UserRepository : IUserRepository
     public Task Save(User user)
     {
         _dbContext.Update(user);
-        
+
         return _dbContext.SaveChangesAsync();
+    }
+
+    public Task<bool> Exists(User user)
+    {
+        return _dbContext.Users.AnyAsync(u => u.Id == user.Id || u.UserName == user.UserName);
     }
 }

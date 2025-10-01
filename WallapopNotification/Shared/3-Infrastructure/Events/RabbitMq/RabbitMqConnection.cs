@@ -24,7 +24,8 @@ public sealed class RabbitMqConnection
             HostName = configParams.HostName,
             UserName = configParams.UserName,
             Password = configParams.Password,
-            Port = configParams.Port
+            Port = configParams.Port,
+            VirtualHost = configParams.VirtualHost
         };
     }
 

@@ -9,4 +9,6 @@ public sealed class RabbitMqConfig
     public required string HostName { get; init; }
 
     public int Port { get; init; } = 5672;
+    
+    public string VirtualHost { get; init; } = "/";
 }
