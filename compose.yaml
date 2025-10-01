@@ -1,0 +1,20 @@
+﻿name: wallanoti
+
+services:
+  telegram:
+    image: wallanoti:1.0
+    container_name: telegram
+    restart: unless-stopped
+    environment:
+      TelegramBotToken: ${TELEGRAM_BOT_TOKEN}
+      RabbitMq__HostName: ${RABBITMQ_HOST}
+      RabbitMq__Port: ${RABBITMQ_PORT}
+      RabbitMq__UserName: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+      RabbitMq__VirtualHost: /
+      ConnectionStrings__Postgres: ${POSTGRES_CONNECTION_STRING}
+      ConnectionStrings__Redis: ${REDIS_CONNECTION_STRING}
+    build:
+      context: .
+      dockerfile: Telegram/Dockerfile
+
