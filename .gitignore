@@ -1,0 +1,90 @@
+*.swp
+*.*~
+project.lock.json
+.DS_Store
+*.pyc
+nupkg/
+
+# Visual Studio Code
+.vscode/
+
+# Rider
+.idea/
+
+# Visual Studio
+.vs/
+
+# Fleet
+.fleet/
+
+# Code Rush
+.cr/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+*.env
+
+# Frontend/Vue.js
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.env.local
+frontend/.env.*.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/.DS_Store
+frontend/coverage/
+frontend/.nyc_output/
+frontend/.vite/
+frontend/.cache/
+frontend/.parcel-cache/
+frontend/.next/
+frontend/.nuxt/
+frontend/.output/
+frontend/.vercel/
+frontend/*.log
+
+# Backend/.NET
+backend/bin/
+backend/obj/
+backend/[Dd]ebug/
+backend/[Rr]elease/
+backend/[Bb]in/
+backend/[Oo]bj/
+backend/.vs/
+backend/*.user
+backend/*.suo
+backend/*.userosscache
+backend/.idea/
+backend/*.log
+backend/appsettings.Development.json
+backend/appsettings.*.json
+backend/*.db
+backend/*.db-shm
+backend/*.db-wal
+backend/wwwroot/dist/
+backend/TestResults/
+backend/BenchmarkDotNet.Artifacts/
+backend/*.DotSettings.user

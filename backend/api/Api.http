@@ -1,0 +1,26 @@
+@Api_HostAddress = https://localhost:7150
+
+GET {{Api_HostAddress}}/auth/login/dayronrey
+Accept: application/json
+
+###
+
+GET {{Api_HostAddress}}/auth/verify/dayronrey/164815
+Content-Type: application/json
+Accept: application/json
+
+> {%
+    client.global.set("token", response.body);
+%}
+
+### El token se asigna automáticamente desde la respuesta anterior
+GET {{Api_HostAddress}}/user
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{token}}
+
+###
+GET {{Api_HostAddress}}/alerts
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{token}}
