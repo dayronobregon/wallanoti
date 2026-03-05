@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+
+/* Base configuration */
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html, body, #app {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased overflow-x-hidden;
+  }
+}
+
+/* Custom components for clean forms */
+@layer components {
+  .form-container {
+    @apply max-w-md mx-auto mt-16 p-8 bg-white rounded-xl shadow-lg border border-gray-200;
+  }
+
+  .form-field {
+    @apply space-y-2 mb-6;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-gray-700;
+  }
+
+  .form-input {
+    @apply block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400
+           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed
+           transition-colors duration-200;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white
+           bg-blue-600 border border-transparent rounded-lg shadow-sm hover:bg-blue-700
+           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600
+           transition-colors duration-200;
+  }
+
+  .text-hint {
+    @apply text-sm text-gray-600 leading-relaxed;
+  }
+
+  .text-error {
+    @apply text-sm text-red-600 font-medium;
+  }
+
+  .link-primary {
+    @apply text-blue-600 hover:text-blue-700 underline font-medium;
+  }
+}
