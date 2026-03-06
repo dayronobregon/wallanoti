@@ -1,5 +1,9 @@
-namespace Wallanoti.Src.Shared.Infrastructure.Events.RabbitMq;
+namespace Wallanoti.Src.Shared.Infrastructure.Events.MassTransit;
 
+/// <summary>
+/// Configuration options for the RabbitMQ broker connection.
+/// Bound from the "RabbitMq" section of appsettings.json.
+/// </summary>
 public sealed class RabbitMqConfig
 {
     public required string UserName { get; init; }
@@ -9,6 +13,6 @@ public sealed class RabbitMqConfig
     public required string HostName { get; init; }
 
     public int Port { get; init; } = 5672;
-    
+
     public string VirtualHost { get; init; } = "/";
 }

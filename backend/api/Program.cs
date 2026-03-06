@@ -9,7 +9,6 @@ using Wallanoti.Api.ScheduledTasks;
 using Wallanoti.Api.Telegram.Configurations;
 using Wallanoti.Src.Notifications.Infrastructure.Notifications;
 using Wallanoti.Src.Shared.Domain;
-using Wallanoti.Src.Shared.Infrastructure.Events.RabbitMq;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -146,14 +145,8 @@ app.Services.UseScheduler(scheduler =>
 
 app.MapHub<WebNotificationHub>(WebNotificationHub.HubName);
 
-await using (var scope = app.Services.CreateAsyncScope())
-{
-    var busConfiguration = scope.ServiceProvider.GetRequiredService<RabbitMqEventBusConfiguration>();
-    await busConfiguration.Configure();
-
-    var consumer = scope.ServiceProvider.GetRequiredService<RabbitDomainEventConsumer>();
-    await consumer.Consume();
-}
+// MassTransit starts and manages RabbitMQ consumers automatically as an IHostedService.
+// No manual consumer setup required.
 
 await using var scope2 = app.Services.CreateAsyncScope();
 var telegramBot = scope2.ServiceProvider.GetRequiredService<TelegramBot>();

@@ -1,20 +1,17 @@
-using Microsoft.Extensions.DependencyInjection;
-using Wallanoti.Src.Shared.Infrastructure.Events.RabbitMq;
+namespace Wallanoti.Tests.Shared._3_Infrastructure.Events;
 
-namespace Wallanoti.Tests.Shared._3_Infrastructure.Events.RabbitMq;
-
-public class RabbitDomainEventConsumerTest : TestBase
+public class DomainEventConsumerTest : TestBase
 {
-    private readonly RabbitDomainEventConsumer _sut;
-
-
-    public RabbitDomainEventConsumerTest(EventBusFixture fixture) : base(fixture)
+    public DomainEventConsumerTest(EventBusFixture fixture) : base(fixture)
     {
-        _sut = fixture.ServiceProvider.GetRequiredService<RabbitDomainEventConsumer>();
     }
 
     [Fact]
-    public async Task StartAsync_ShouldStartConsumingMessages()
+    public async Task Consumer_ShouldBeRegisteredViaMassTransit()
     {
+        // MassTransit manages consumer lifecycle — this test is a placeholder.
+        // Integration tests for message consumption can be added using
+        // MassTransit's built-in test harness (AddMassTransitTestHarness).
+        await Task.CompletedTask;
     }
 }

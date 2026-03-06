@@ -1,7 +1,8 @@
+using MassTransit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Wallanoti.Src.Shared.Domain.Events;
-using Wallanoti.Src.Shared.Infrastructure.Events.RabbitMq;
+using Wallanoti.Src.Shared.Infrastructure.Events.MassTransit;
 
 namespace Wallanoti.Tests;
 
@@ -19,24 +20,16 @@ public sealed class EventBusFixture : IAsyncDisposable
             .AddJsonFile("appsettings.Test.json", false, true)
             .AddEnvironmentVariables()
             .Build();
-        ;
 
         var services = new ServiceCollection();
 
-        // Configurar servicios para pruebas
         services.AddLogging();
-        services.Configure<RabbitMqConfig>(config.GetSection("RabbitMq"));
-        services.AddScoped<RabbitMqConnection>();
-        services.AddScoped<RabbitMqEventBusConfiguration>();
-        services.AddScoped<RabbitDomainEventConsumer>();
 
-        services.AddScoped<IEventBus>(p =>
-        {
-            var connection = p.GetRequiredService<RabbitMqConnection>();
-            return new RabbitMqEventBus(connection, "test_domain_events");
-        });
+        var rabbitMqConfig = config.GetSection("RabbitMq").Get<RabbitMqConfig>()
+            ?? throw new InvalidOperationException("RabbitMq config missing in test settings.");
 
-        services.AddDomainEventSubscriberInformationService();
+        services.AddMassTransitEventBus(rabbitMqConfig);
+        services.AddScoped<IEventBus, MassTransitEventBus>();
 
         _serviceProvider = services.BuildServiceProvider();
         EventBus = _serviceProvider.GetRequiredService<IEventBus>();

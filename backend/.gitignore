@@ -1,0 +1,14 @@
+
+# START AI Agent Symlinks
+.claude/commands/
+.claude/skills/
+.codex/config.toml
+.codex/skills
+.cursor/mcp.json
+.cursor/skills/
+.github/copilot-instructions.md
+.mcp.json
+.vscode/mcp.json
+AGENTS.md
+CLAUDE.md
+# END AI Agent Symlinks

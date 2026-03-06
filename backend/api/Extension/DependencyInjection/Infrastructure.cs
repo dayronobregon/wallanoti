@@ -9,7 +9,7 @@ using Wallanoti.Src.Notifications.Domain;
 using Wallanoti.Src.Notifications.Infrastructure.Notifications;
 using Wallanoti.Src.Notifications.Infrastructure.Percistence;
 using Wallanoti.Src.Shared.Domain.Events;
-using Wallanoti.Src.Shared.Infrastructure.Events.RabbitMq;
+using Wallanoti.Src.Shared.Infrastructure.Events.MassTransit;
 using Wallanoti.Src.Shared.Infrastructure.Percistence.EntityFramework;
 using Wallanoti.Src.Users.Domain.Repositories;
 using Wallanoti.Src.Users.Infrastructure.Percistence;
@@ -47,12 +47,21 @@ public static class Infrastructure
     private static IServiceCollection AddEventBus(this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddScoped<IEventBus, RabbitMqEventBus>();
-        services.Configure<RabbitMqConfig>(configuration.GetSection("RabbitMq"));
-        services.AddScoped<RabbitMqEventBusConfiguration>();
-        services.AddScoped<RabbitDomainEventConsumer>();
-        services.AddSingleton<RabbitMqConnection, RabbitMqConnection>();
+        var rabbitMqConfig = configuration.GetSection("RabbitMq").Get<RabbitMqConfig>()
+            ?? throw new InvalidOperationException("RabbitMq configuration section is missing.");
 
+        // IEventBus → MassTransitEventBus (uses MassTransit IPublishEndpoint internally)
+        services.AddScoped<IEventBus, MassTransitEventBus>();
+
+        // Register MassTransit with RabbitMQ transport and custom domain-events topology
+        services.AddMassTransitEventBus(rabbitMqConfig);
+
+        // Register domain event handlers so DI can resolve them inside the consumer adapter
+        services.AddScoped<Wallanoti.Src.Notifications.Application.SaveOnNewItemsFound.SaveNotificationOnNewItemsFound>();
+        services.AddScoped<Wallanoti.Src.AlertCounter.Application.Increment.IncrementOnNewItemsFound>();
+        services.AddScoped<Wallanoti.Src.Notifications.Application.Notify.Telegram.NotifyOnNotificationCreatedPush>();
+        services.AddScoped<Wallanoti.Src.Notifications.Application.Notify.Web.NotifyOnNotificationCreatedWeb>();
+        services.AddScoped<Wallanoti.Src.Notifications.Application.Notify.Telegram.NotifyOnUserLoggedInPush>();
 
         return services;
     }

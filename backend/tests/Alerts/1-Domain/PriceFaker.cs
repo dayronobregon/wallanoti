@@ -12,7 +12,6 @@ public sealed class PriceFaker:Faker<Price>
     public PriceFaker()
     {
         RuleFor(x => x.CurrentPrice, f => f.Random.Double(0, 1000));
-        RuleFor(x => x.CurrentPrice, f => f.Finance.Currency().Code);
         RuleFor(x => x.PreviousPrice, f => f.Random.Double(0, 1000));
     }
 }
