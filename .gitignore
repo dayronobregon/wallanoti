@@ -98,9 +98,6 @@ backend/*.DotSettings.user
 .cursor/mcp.json
 .cursor/skills/
 .github/agents/skills
-.github/copilot-instructions.md
-.mcp.json
-.vscode/mcp.json
 AGENTS.md
 CLAUDE.md
 # END AI Agent Symlinks
