@@ -87,5 +87,3 @@ npm run dev
 ```
 
 See the respective `AGENTS.md` files in each directory for complete command references and style guidelines.
-
-Always use Context7 MCP when generating code that involves external libraries or frameworks, without me having to ask.
