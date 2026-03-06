@@ -33,8 +33,24 @@ public sealed class OnMessageHandlerFactory
         // Determine the command token: first word if starts with "/", else null
         var token = messageText?.Trim();
         var isCommand = token?.StartsWith("/") == true;
-        var commandToken = isCommand ? token?.Split(' ').FirstOrDefault()?.ToLower() : null;
+        string? commandToken = null;
+        if (isCommand && token is not null)
+        {
+            // Take the first whitespace-delimited token (e.g. "/alert@MyBot")
+            commandToken = token.Split(' ').FirstOrDefault();
 
+            if (!string.IsNullOrEmpty(commandToken))
+            {
+                // Normalize Telegram group-chat commands like "/command@BotName" to "/command"
+                var atIndex = commandToken.IndexOf('@');
+                if (atIndex > 0)
+                {
+                    commandToken = commandToken.Substring(0, atIndex);
+                }
+
+                commandToken = commandToken.ToLower();
+            }
+        }
         // /cancel is always handled first regardless of state
         if (commandToken == CancelTelegramMessageResolver.Command)
             return _cancelTelegramMessageResolver;
