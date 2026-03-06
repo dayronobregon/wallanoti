@@ -12,9 +12,9 @@ public sealed class ListTelegramMessageResolver : IMessageResolver
     public const string Command = "/list";
 
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly TelegramBotConnection _botConnection;
+    private readonly ITelegramBotConnection _botConnection;
 
-    public ListTelegramMessageResolver(IServiceScopeFactory scopeFactory, TelegramBotConnection botConnection)
+    public ListTelegramMessageResolver(IServiceScopeFactory scopeFactory, ITelegramBotConnection botConnection)
     {
         _scopeFactory = scopeFactory;
         _botConnection = botConnection;
