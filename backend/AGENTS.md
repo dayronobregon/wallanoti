@@ -168,3 +168,5 @@ dotnet run --project Apps/Api
 # Apply EF migrations
 dotnet ef database update --project WallapopNotification
 ```
+
+Always use Context7 MCP when generating code that involves external libraries or frameworks, without me having to ask.
