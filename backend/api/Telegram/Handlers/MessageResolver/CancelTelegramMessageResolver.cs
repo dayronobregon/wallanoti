@@ -5,14 +5,14 @@ using Wallanoti.Src.Notifications.Infrastructure.Telegram;
 
 namespace Wallanoti.Api.Telegram.Handlers.MessageResolver;
 
-public sealed class NewAlertTelegramMessageResolver : IMessageResolver
+public sealed class CancelTelegramMessageResolver : IMessageResolver
 {
-    public const string Command = "/alert";
+    public const string Command = "/cancel";
 
     private readonly TelegramBotConnection _botConnection;
     private readonly ITelegramConversationRepository _conversationRepository;
 
-    public NewAlertTelegramMessageResolver(
+    public CancelTelegramMessageResolver(
         TelegramBotConnection botConnection,
         ITelegramConversationRepository conversationRepository)
     {
@@ -23,10 +23,18 @@ public sealed class NewAlertTelegramMessageResolver : IMessageResolver
     public async Task Execute(Message message)
     {
         var chatId = message.Chat.Id;
+        var state = await _conversationRepository.GetStateAsync(chatId);
 
-        await _conversationRepository.SetStateAsync(chatId, ConversationState.AwaitingUrl);
+        if (state == ConversationState.Idle)
+        {
+            await _botConnection.Client().SendMessage(chatId,
+                "No tienes ninguna operación en curso.");
+            return;
+        }
+
+        await _conversationRepository.ClearAsync(chatId);
 
         await _botConnection.Client().SendMessage(chatId,
-            "Envíame la URL de búsqueda de Wallapop 🔗");
+            "Operación cancelada ✅");
     }
 }

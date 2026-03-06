@@ -39,9 +39,7 @@ public sealed class TelegramBot : IAsyncDisposable
 
     private async Task OnMessage(Message message, UpdateType type)
     {
-        var command = message.Text?.ToLower().Split(",").FirstOrDefault();
-
-        var resolver = _onMessageHandlerFactory.Handle(command);
+        var resolver = await _onMessageHandlerFactory.HandleAsync(message.Chat.Id, message.Text);
 
         await resolver.Execute(message);
     }
@@ -53,8 +51,10 @@ public sealed class TelegramBot : IAsyncDisposable
         var commands = await botClient.GetMyCommands();
 
         if (commands.Any(x =>
-                x.Command is StartTelegramMessageResolver.Command or NewAlertTelegramMessageResolver.Command
-                    or ListTelegramMessageResolver.Command))
+                x.Command is StartTelegramMessageResolver.Command
+                    or NewAlertTelegramMessageResolver.Command
+                    or ListTelegramMessageResolver.Command
+                    or CancelTelegramMessageResolver.Command))
         {
             return;
         }
@@ -65,6 +65,7 @@ public sealed class TelegramBot : IAsyncDisposable
         {
             new() { Command = NewAlertTelegramMessageResolver.Command, Description = "Crea una nueva alerta" },
             new() { Command = ListTelegramMessageResolver.Command, Description = "Lista las alertas" },
+            new() { Command = CancelTelegramMessageResolver.Command, Description = "Cancela la operación en curso" },
         });
     }
 

@@ -1,4 +1,5 @@
 using Wallanoti.Api.Telegram.Configurations;
+using Wallanoti.Api.Telegram.Conversation;
 using Wallanoti.Api.Telegram.Handlers;
 using Wallanoti.Api.Telegram.Handlers.MessageResolver;
 using Wallanoti.Src.Alerts.Application.SearchNewItems;
@@ -21,6 +22,9 @@ public static class Application
         services.AddScoped<StartTelegramMessageResolver>();
         services.AddScoped<NewAlertTelegramMessageResolver>();
         services.AddScoped<ListTelegramMessageResolver>();
+        services.AddScoped<AlertUrlTelegramMessageResolver>();
+        services.AddScoped<CancelTelegramMessageResolver>();
+        services.AddScoped<ITelegramConversationRepository, RedisTelegramConversationRepository>();
 
         return services;
     }

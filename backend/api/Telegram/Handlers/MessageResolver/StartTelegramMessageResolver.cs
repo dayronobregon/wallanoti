@@ -30,6 +30,6 @@ public sealed class StartTelegramMessageResolver : IMessageResolver
         await mediator.Send(new CreateUserCommand(message.Chat.Id, message.Chat.Username));
 
         await _botConnection.Client().SendMessage(message.Chat.Id,
-            "Ya puedes crear alertas con el comando /alert. Ejemplo: /alert, Televisor LG 55 pulgadas, https://es.wallapop.com/item/televisor-lg-55-pulgadas-123456789");
+            "Ya puedes crear alertas con el comando /alert. Simplemente escribe /alert y te pediré la URL de búsqueda de Wallapop 🔗");
     }
 }
