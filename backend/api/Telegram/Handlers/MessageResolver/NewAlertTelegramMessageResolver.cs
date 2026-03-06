@@ -9,11 +9,11 @@ public sealed class NewAlertTelegramMessageResolver : IMessageResolver
 {
     public const string Command = "/alert";
 
-    private readonly TelegramBotConnection _botConnection;
+    private readonly ITelegramBotConnection _botConnection;
     private readonly ITelegramConversationRepository _conversationRepository;
 
     public NewAlertTelegramMessageResolver(
-        TelegramBotConnection botConnection,
+        ITelegramBotConnection botConnection,
         ITelegramConversationRepository conversationRepository)
     {
         _botConnection = botConnection;

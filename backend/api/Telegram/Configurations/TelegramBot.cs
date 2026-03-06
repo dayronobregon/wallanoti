@@ -24,7 +24,7 @@ public sealed class TelegramBot : IAsyncDisposable
 
     public async Task Start()
     {
-        var botClient = _telegramBotConnection.Client();
+        var botClient = (TelegramBotClient)_telegramBotConnection.Client();
 
         await Prepare();
 
@@ -71,7 +71,7 @@ public sealed class TelegramBot : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        var botClient = _telegramBotConnection.Client();
+        var botClient = (TelegramBotClient)_telegramBotConnection.Client();
 
         await botClient.Close();
     }

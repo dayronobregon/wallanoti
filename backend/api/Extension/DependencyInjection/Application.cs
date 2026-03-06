@@ -16,6 +16,7 @@ public static class Application
 
         services.AddScoped<ItemSearcher>();
         services.AddScoped<TelegramBotConnection>();
+        services.AddScoped<ITelegramBotConnection>(sp => sp.GetRequiredService<TelegramBotConnection>());
         services.AddScoped<TelegramBot>();
         services.AddScoped<OnMessageHandlerFactory>();
         services.AddScoped<OnUpdateHandlerFactory>();

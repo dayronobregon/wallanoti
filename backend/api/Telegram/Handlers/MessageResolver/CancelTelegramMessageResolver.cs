@@ -9,11 +9,11 @@ public sealed class CancelTelegramMessageResolver : IMessageResolver
 {
     public const string Command = "/cancel";
 
-    private readonly TelegramBotConnection _botConnection;
+    private readonly ITelegramBotConnection _botConnection;
     private readonly ITelegramConversationRepository _conversationRepository;
 
     public CancelTelegramMessageResolver(
-        TelegramBotConnection botConnection,
+        ITelegramBotConnection botConnection,
         ITelegramConversationRepository conversationRepository)
     {
         _botConnection = botConnection;

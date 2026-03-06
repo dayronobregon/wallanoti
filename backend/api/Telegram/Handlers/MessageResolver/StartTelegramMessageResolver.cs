@@ -10,9 +10,9 @@ public sealed class StartTelegramMessageResolver : IMessageResolver
 {
     public const string Command = "/start";
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly TelegramBotConnection _botConnection;
+    private readonly ITelegramBotConnection _botConnection;
 
-    public StartTelegramMessageResolver(IServiceScopeFactory scopeFactory, TelegramBotConnection botConnection)
+    public StartTelegramMessageResolver(IServiceScopeFactory scopeFactory, ITelegramBotConnection botConnection)
     {
         _scopeFactory = scopeFactory;
         _botConnection = botConnection;

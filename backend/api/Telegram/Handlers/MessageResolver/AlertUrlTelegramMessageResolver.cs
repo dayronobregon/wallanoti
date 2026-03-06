@@ -10,12 +10,12 @@ namespace Wallanoti.Api.Telegram.Handlers.MessageResolver;
 public sealed class AlertUrlTelegramMessageResolver : IMessageResolver
 {
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly TelegramBotConnection _botConnection;
+    private readonly ITelegramBotConnection _botConnection;
     private readonly ITelegramConversationRepository _conversationRepository;
 
     public AlertUrlTelegramMessageResolver(
         IServiceScopeFactory scopeFactory,
-        TelegramBotConnection botConnection,
+        ITelegramBotConnection botConnection,
         ITelegramConversationRepository conversationRepository)
     {
         _scopeFactory = scopeFactory;

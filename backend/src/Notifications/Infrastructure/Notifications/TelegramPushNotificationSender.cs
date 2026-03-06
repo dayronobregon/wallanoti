@@ -8,9 +8,9 @@ namespace Wallanoti.Src.Notifications.Infrastructure.Notifications;
 
 public class TelegramPushNotificationSender : IPushNotificationSender
 {
-    private readonly TelegramBotConnection _telegramConnection;
+    private readonly ITelegramBotConnection _telegramConnection;
 
-    public TelegramPushNotificationSender(TelegramBotConnection telegramBotConnection)
+    public TelegramPushNotificationSender(ITelegramBotConnection telegramBotConnection)
     {
         _telegramConnection = telegramBotConnection;
     }
