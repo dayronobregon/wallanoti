@@ -28,11 +28,11 @@
 
 When performing these actions, ALWAYS invoke the corresponding skill FIRST:
 
-| Action                     | Skill(s)                            |
-|----------------------------|-------------------------------------|
-| Implementing a new feature | `tdd` → then `clean-ddd-hexagonal` |
-| Refactoring existing code  | `tdd` → then `clean-ddd-hexagonal` |
-| Writing tests              | `tdd`                               |
+| Action                     | Skill(s)                                      |
+|----------------------------|-----------------------------------------------|
+| Implementing a new feature | `tdd` → then `clean-ddd-hexagonal`            |
+| Refactoring existing code  | `tdd` → then `clean-ddd-hexagonal`            |
+| Writing tests              | `tdd`                                         |
 | Fixing bugs                | `tdd` (reproduce bug as a failing test first) |
 
 > **Order matters:** Always invoke `tdd` before `clean-ddd-hexagonal`. Tests come before implementation.

@@ -40,10 +40,12 @@ This is a **monorepo** with two main parts:
 
 ## Available Skills
 
-| Skill                 | Description                                                    | Location                                          |
-|-----------------------|----------------------------------------------------------------|---------------------------------------------------|
-| `clean-ddd-hexagonal` | Clean Architecture, DDD, Hexagonal patterns for backend design | [clean-ddd-hexagonal](skills/clean-ddd-hexagonal) |
-| `tdd`                 | Test-Driven Development practices and techniques               | [tdd](skills/tdd)                                 |
+| Skill                 | Description                                                        | Location                                          |
+|-----------------------|--------------------------------------------------------------------|---------------------------------------------------|
+| `clean-ddd-hexagonal` | Clean Architecture, DDD, Hexagonal patterns for backend design     | [clean-ddd-hexagonal](skills/clean-ddd-hexagonal) |
+| `tdd`                 | Test-Driven Development practices and techniques                   | [tdd](skills/tdd)                                 |
+| `git-commit`          | Best practices for writing clear and effective git commit messages | [git-commit](skills/git-commit)                   |
+| `pull-request`        | Best practices for writing clear and effective pull request        | [pull-request](skills/pull-request)               |
 
 ### Auto-invoke Skills
 
@@ -55,6 +57,8 @@ When performing these actions, ALWAYS invoke the corresponding skill FIRST:
 | Refactoring existing code  | `clean-ddd-hexagonal` |
 | Writing tests              | `tdd`                 |
 | Fixing bugs                | `tdd`                 |
+| Writing commit messages    | `git-commit`          |
+| Writing pull requests      | `pull-request`        |
 
 ## Detailed Documentation
 
