@@ -101,4 +101,24 @@ public class AlertUrlTelegramMessageResolverTest
 
         _conversationRepoMock.Verify(x => x.ClearAsync(chatId), Times.Once);
     }
+
+    [Fact]
+    public async Task Execute_WithEncodedPlusSigns_PreservesLiteralPlusSignsInAlertName()
+    {
+        const long chatId = 123L;
+        const string url = "https://es.wallapop.com/search?keywords=c%2B%2B";
+        var message = new Message { Chat = new Chat { Id = chatId }, Text = url };
+
+        _conversationRepoMock
+            .Setup(x => x.ClearAsync(chatId))
+            .Returns(Task.CompletedTask);
+
+        await _sut.Execute(message);
+
+        _mediatorMock.Verify(
+            x => x.Send(
+                It.Is<CreateAlertCommand>(cmd => cmd.AlertName == "c++" && cmd.UserId == chatId),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
 }

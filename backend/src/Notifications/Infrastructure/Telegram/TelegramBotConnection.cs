@@ -18,4 +18,22 @@ public sealed class TelegramBotConnection : ITelegramBotConnection
         var options = new TelegramBotClientOptions(_token) { RetryThreshold = 120, RetryCount = 2 };
         return BotClient ??= new TelegramBotClient(options);
     }
+
+    public void OnMessage(TelegramBotClient.OnMessageHandler onMessage)
+    {
+        var botClient = (TelegramBotClient)Client();
+        botClient.OnMessage += onMessage;
+    }
+
+    public void OnUpdate(TelegramBotClient.OnUpdateHandler onUpdate)
+    {
+        var botClient = (TelegramBotClient)Client();
+        botClient.OnUpdate += onUpdate;
+    }
+
+    public Task Close()
+    {
+        var botClient = (TelegramBotClient)Client();
+        return botClient.Close();
+    }
 }

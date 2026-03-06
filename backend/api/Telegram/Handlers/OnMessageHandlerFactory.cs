@@ -33,7 +33,22 @@ public sealed class OnMessageHandlerFactory
         // Determine the command token: first word if starts with "/", else null
         var token = messageText?.Trim();
         var isCommand = token?.StartsWith("/") == true;
-        var commandToken = isCommand ? token?.Split(' ').FirstOrDefault()?.ToLower() : null;
+        string? commandToken = null;
+        if (isCommand)
+        {
+            commandToken = token?.Split(' ').FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(commandToken))
+            {
+                var atIndex = commandToken.IndexOf('@');
+                if (atIndex > 0)
+                {
+                    commandToken = commandToken[..atIndex];
+                }
+
+                commandToken = commandToken.ToLowerInvariant();
+            }
+        }
 
         // /cancel is always handled first regardless of state
         if (commandToken == CancelTelegramMessageResolver.Command)

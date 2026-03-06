@@ -9,11 +9,11 @@ namespace Wallanoti.Api.Telegram.Configurations;
 
 public sealed class TelegramBot : IAsyncDisposable
 {
-    private readonly TelegramBotConnection _telegramBotConnection;
+    private readonly ITelegramBotConnection _telegramBotConnection;
     private readonly OnMessageHandlerFactory _onMessageHandlerFactory;
     private readonly OnUpdateHandlerFactory _onUpdateHandlerFactory;
 
-    public TelegramBot(TelegramBotConnection telegramBotConnection,
+    public TelegramBot(ITelegramBotConnection telegramBotConnection,
         OnMessageHandlerFactory onMessageHandlerFactory,
         OnUpdateHandlerFactory onUpdateHandlerFactory)
     {
@@ -24,12 +24,10 @@ public sealed class TelegramBot : IAsyncDisposable
 
     public async Task Start()
     {
-        var botClient = (TelegramBotClient)_telegramBotConnection.Client();
-
         await Prepare();
 
-        botClient.OnMessage += OnMessage;
-        botClient.OnUpdate += OnUpdate;
+        _telegramBotConnection.OnMessage(OnMessage);
+        _telegramBotConnection.OnUpdate(OnUpdate);
     }
 
     private Task OnUpdate(Update update)
@@ -49,12 +47,16 @@ public sealed class TelegramBot : IAsyncDisposable
         var botClient = _telegramBotConnection.Client();
 
         var commands = await botClient.GetMyCommands();
+        var requiredCommands = new[]
+        {
+            NewAlertTelegramMessageResolver.Command,
+            ListTelegramMessageResolver.Command,
+            CancelTelegramMessageResolver.Command
+        };
 
-        if (commands.Any(x =>
-                x.Command is StartTelegramMessageResolver.Command
-                    or NewAlertTelegramMessageResolver.Command
-                    or ListTelegramMessageResolver.Command
-                    or CancelTelegramMessageResolver.Command))
+        if (requiredCommands.All(requiredCommand =>
+                commands.Any(command =>
+                    command.Command.Equals(requiredCommand, StringComparison.OrdinalIgnoreCase))))
         {
             return;
         }
@@ -71,8 +73,6 @@ public sealed class TelegramBot : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        var botClient = (TelegramBotClient)_telegramBotConnection.Client();
-
-        await botClient.Close();
+        await _telegramBotConnection.Close();
     }
 }

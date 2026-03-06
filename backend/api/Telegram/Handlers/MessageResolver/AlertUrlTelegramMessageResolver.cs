@@ -53,7 +53,7 @@ public sealed class AlertUrlTelegramMessageResolver : IMessageResolver
             return;
         }
 
-        var alertName = Uri.UnescapeDataString(rawKeywords.Replace("+", " "));
+        var alertName = rawKeywords;
 
         using var scope = _scopeFactory.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();

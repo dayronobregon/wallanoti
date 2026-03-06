@@ -80,6 +80,14 @@ public class OnMessageHandlerFactoryTest
     }
 
     [Fact]
+    public async Task HandleAsync_WhenCommandIsAlertWithBotName_ReturnsNewAlertResolver()
+    {
+        var resolver = await _sut.HandleAsync(chatId: 1L, messageText: "/alert@WallanotiBot");
+
+        Assert.Same(_newAlertResolver, resolver);
+    }
+
+    [Fact]
     public async Task HandleAsync_WhenCommandIsList_ReturnsListResolver()
     {
         var resolver = await _sut.HandleAsync(chatId: 1L, messageText: "/list");
@@ -93,5 +101,13 @@ public class OnMessageHandlerFactoryTest
         var resolver = await _sut.HandleAsync(chatId: 1L, messageText: "/unknown");
 
         Assert.Same(_startResolver, resolver);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenMessageIsCancelWithBotName_ReturnsCancelResolver()
+    {
+        var resolver = await _sut.HandleAsync(chatId: 1L, messageText: "/cancel@WallanotiBot");
+
+        Assert.Same(_cancelResolver, resolver);
     }
 }
