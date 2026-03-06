@@ -1,41 +1,128 @@
+using System.Text.Json;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using Moq;
 using Wallanoti.Src.Alerts.Application.SearchNewItems;
 using Wallanoti.Src.Alerts.Domain;
 using Wallanoti.Src.Alerts.Domain.Models;
+using Wallanoti.Src.Shared.Domain.Events;
 using Wallanoti.Src.Shared.Domain.ValueObjects;
-using Wallanoti.Tests.Alerts._1_Domain;
 
 namespace Wallanoti.Tests.Alerts._2_Application.SearchNewItems;
 
-public class ItemSearcherTest : TestBase
+public class ItemSearcherTest
 {
     private readonly Mock<IAlertRepository> _alertRepositoryMock = new();
     private readonly Mock<IWallapopRepository> _wallapopRepositoryMock = new();
-    private readonly Mock<IDistributedCache> _cacheMock = new();
+    private readonly IDistributedCache _cache;
+    private readonly Mock<IEventBus> _eventBusMock = new();
     private readonly ItemSearcher _sut;
 
-    public ItemSearcherTest(EventBusFixture fixture) : base(fixture)
+    public ItemSearcherTest()
     {
+        _eventBusMock.Setup(x => x.Publish(It.IsAny<List<DomainEvent>>()))
+            .Returns(Task.CompletedTask);
+        _alertRepositoryMock.Setup(x => x.Update(It.IsAny<Alert>()))
+            .Returns(Task.CompletedTask);
+        _cache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
         _sut = new ItemSearcher(
-            EventBus,
+            _eventBusMock.Object,
             _alertRepositoryMock.Object,
             _wallapopRepositoryMock.Object,
-            _cacheMock.Object);
+            _cache);
     }
 
     [Fact]
-    public async Task METHOD()
+    public async Task Execute_PublishesNewItemsAndUpdatesCache()
     {
-        var alerts = new AlertFaker().Generate(2);
-        var items = new ItemFaker().Generate(2);
-        // Arrange
-        _alertRepositoryMock.Setup(x => x.All())
-            .ReturnsAsync(alerts);
+        var alert = BuildAlert(DateTime.UtcNow.AddMinutes(-30), DateTime.UtcNow.AddMinutes(-20));
+        var newerTime = DateTime.UtcNow;
+        var items = new List<Item>
+        {
+            BuildItem("item-1", newerTime),
+            BuildItem("item-2", newerTime.AddMinutes(1))
+        };
 
-        _wallapopRepositoryMock.Setup(x => x.Latest(It.IsAny<Url>()))
-            .ReturnsAsync(items);
+        _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
+        _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(items);
 
         await _sut.Execute();
+
+        _eventBusMock.Verify(x => x.Publish(It.Is<List<DomainEvent>>(events =>
+            events.OfType<NewItemsFoundEvent>().Single().Items!.Count() == items.Count &&
+            events.OfType<NewItemsFoundEvent>().Single().UserId == alert.UserId)), Times.Once);
+
+        _alertRepositoryMock.Verify(x => x.Update(alert), Times.Once);
+        Assert.NotNull(_cache.GetString(alert.GetCacheKey()));
+    }
+
+    [Fact]
+    public async Task Execute_WhenNoNewItems_DoesNotPublishOrCache()
+    {
+        var now = DateTime.UtcNow;
+        var alert = BuildAlert(now, now);
+        var items = new List<Item>
+        {
+            BuildItem("item-1", now.AddMinutes(-10))
+        };
+
+        _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
+        _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(items);
+
+        await _sut.Execute();
+
+        _eventBusMock.Verify(x => x.Publish(It.IsAny<List<DomainEvent>>()), Times.Never);
+        _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Never);
+        Assert.Null(_cache.GetString(alert.GetCacheKey()));
+    }
+
+    [Fact]
+    public async Task Execute_SkipsItemsAlreadyInCache()
+    {
+        var createdAt = DateTime.UtcNow;
+        var alert = BuildAlert(createdAt.AddMinutes(-30), createdAt.AddMinutes(-20));
+        var cachedId = "item-cached";
+        var items = new List<Item>
+        {
+            BuildItem(cachedId, createdAt.AddMinutes(10))
+        };
+
+        _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
+        _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(items);
+        _cache.SetString(alert.GetCacheKey(), JsonSerializer.Serialize(new List<string> { cachedId }));
+
+        await _sut.Execute();
+
+        _eventBusMock.Verify(x => x.Publish(It.IsAny<List<DomainEvent>>()), Times.Never);
+        _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Never);
+        Assert.NotNull(_cache.GetString(alert.GetCacheKey()));
+    }
+
+    private static Alert BuildAlert(DateTime createdAt, DateTime? updatedAt = null, bool isActive = true)
+    {
+        return new Alert(Guid.NewGuid(), 1, "alert", "https://es.wallapop.com/item/slug", createdAt, updatedAt,
+            isActive);
+    }
+
+    private static Item BuildItem(string id, DateTime createdAt, DateTime? modifiedAt = null)
+    {
+        return new Item
+        {
+            Id = id,
+            WallapopUserId = "user",
+            Title = "title",
+            Description = "desc",
+            CategoryId = 1,
+            Price = Price.Create(10, null),
+            Images = new List<string>(),
+            Location = Location.Create("city", "region"),
+            Shipping = false,
+            Favorited = false,
+            Reserved = false,
+            WebSlug = $"slug-{id}",
+            CreatedAt = new DateTimeOffset(createdAt).ToUnixTimeMilliseconds(),
+            ModifiedAt = new DateTimeOffset(modifiedAt ?? createdAt).ToUnixTimeMilliseconds()
+        };
     }
 }

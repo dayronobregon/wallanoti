@@ -5,8 +5,8 @@ namespace Wallanoti.Src.Shared.Infrastructure.Events.MassTransit;
 
 /// <summary>
 /// IEventBus implementation backed by MassTransit.
-/// Converts each DomainEvent into a DomainEventEnvelope and publishes it to the
-/// configured RabbitMQ topic exchange using the domain event name as routing key.
+/// Converts each DomainEvent into a DomainEventEnvelope and publishes it using
+/// MassTransit's default RabbitMQ conventions.
 /// </summary>
 public sealed class MassTransitEventBus(IPublishEndpoint publishEndpoint) : IEventBus
 {
@@ -29,9 +29,6 @@ public sealed class MassTransitEventBus(IPublishEndpoint publishEndpoint) : IEve
             Data = domainEvent.ToJson()
         };
 
-        await publishEndpoint.Publish(
-            envelope,
-            ctx => ctx.SetRoutingKey(domainEvent.EventName())
-        );
+        await publishEndpoint.Publish(envelope);
     }
 }

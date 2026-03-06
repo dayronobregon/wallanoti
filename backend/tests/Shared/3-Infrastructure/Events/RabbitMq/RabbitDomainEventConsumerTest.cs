@@ -1,4 +1,4 @@
-namespace Wallanoti.Tests.Shared._3_Infrastructure.Events;
+namespace Wallanoti.Tests.Shared._3_Infrastructure.Events.RabbitMq;
 
 public class DomainEventConsumerTest : TestBase
 {

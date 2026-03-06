@@ -1,26 +1,45 @@
 # Wallanoti API - AI Agent Ruleset
 
 > **Skills Reference**: For detailed patterns, use these skills:
-> - [`clean-ddd-hexagonal`](../../../../Users/dayronrey/.config/opencode/skills/clean-ddd-hexagonal/SKILL.md) -
-    Hexagonal
-    Architecture, DDD, CQRS for backend design
-> - [`tdd`](../../../../Users/dayronrey/.config/opencode/skills/tdd/SKILL.md) - Test-Driven Development practices and
+> - [clean-ddd-hexagonal](../.agents/skills/clean-ddd-hexagonal) -
+    Hexagonal Architecture, DDD, CQRS for backend design
+> - [tdd](../.agents/skills/tdd) - Test-Driven Development practices and
     techniques
 
 .NET 8 API with Clean Architecture + DDD + CQRS + Event-Driven Architecture
+
+---
+
+## 🔴 TDD is Mandatory — No Exceptions
+
+**Before writing any production code**, tests MUST be written first. This is non-negotiable.
+
+### The Red-Green-Refactor cycle applies to ALL work:
+
+1. 🔴 **Red** — Write a failing test that describes the expected behavior
+2. 🟢 **Green** — Write the minimum production code to make it pass
+3. 🔵 **Refactor** — Clean up while keeping tests green
+
+> If there is no failing test, there is no implementation. Always invoke the `tdd` skill before starting any task.
+
+---
 
 ### Auto-invoke Skills
 
 When performing these actions, ALWAYS invoke the corresponding skill FIRST:
 
-| Action                     | Skill                 |
-|----------------------------|-----------------------|
-| Implementing a new feature | `clean-ddd-hexagonal` |
-| Refactoring existing code  | `clean-ddd-hexagonal` |
-| Writing tests              | `tdd`                 |
-| Fixing bugs                | `tdd`                 |
+| Action                     | Skill(s)                            |
+|----------------------------|-------------------------------------|
+| Implementing a new feature | `tdd` → then `clean-ddd-hexagonal` |
+| Refactoring existing code  | `tdd` → then `clean-ddd-hexagonal` |
+| Writing tests              | `tdd`                               |
+| Fixing bugs                | `tdd` (reproduce bug as a failing test first) |
 
-**Note:** Tests are located in `Test/Src/WallapopNotification.Tests/`
+> **Order matters:** Always invoke `tdd` before `clean-ddd-hexagonal`. Tests come before implementation.
+
+**Note:** Tests are located in `test/`
+
+---
 
 ## Architecture
 
@@ -42,27 +61,17 @@ The backend follows **Hexagonal Architecture** with clear separation:
 - **Value Objects:** Immutable types like `Price`, `Url`, `VerificationCode`
 - **Repository Pattern:** Interfaces in Domain, implementations in Infrastructure
 
+---
+
 ## RabbitMQ / MassTransit Event Bus
 
 > **MANDATORY** — All topology MUST follow this structure exactly. Any deviation is not allowed.
 
 The event bus is implemented with **MassTransit** (RabbitMQ transport, v8).
 
-### Exchanges
+#### Error handling
 
-The system uses **1 main exchange**. Retry and dead-letter are handled by MassTransit internally — do **not** create `retry-domain-events` or `dead-letter-domain-events` manually.
-
-| Exchange        | Type  | Purpose                                         |
-|-----------------|-------|-------------------------------------------------|
-| `domain-events` | topic | Main exchange — all queues and bindings go here |
-
-#### Error handling (managed by MassTransit)
-
-| Mechanism          | How                                                                                                                                   |
-|--------------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| Immediate retry    | `UseMessageRetry` — 2 attempts with 1 s interval, per endpoint                                                                       |
-| Delayed redelivery | `UseDelayedRedelivery` — 3 attempts at 5 s / 15 s / 30 s (requires `rabbitmq_delayed_message_exchange` plugin)                       |
-| Dead-letter        | MassTransit auto-creates `[queue]_error` queues after all retries are exhausted                                                       |
+On failure, MassTransit automatically moves the message to `[queue]_error`.
 
 ---
 
@@ -102,8 +111,8 @@ alert.items-found
 
 #### Current topology
 
-| Queue                                                           | Routing key            |
-|-----------------------------------------------------------------|------------------------|
+| Queue                                                          | Routing key            |
+|----------------------------------------------------------------|------------------------|
 | `wallanoti.notifications.save_notification_on_new_items_found` | `alert.items-found`    |
 | `wallanoti.notifications.notify_on_notification_created_push`  | `notification.created` |
 | `wallanoti.notifications.notify_on_notification_created_web`   | `notification.created` |
@@ -114,12 +123,8 @@ alert.items-found
 
 ### Rules Summary
 
-1. **One queue per consumer** — never share a queue between two consumers.
-2. **Queue name** = `[bounded_context].[module].[consumer_name_snake_case]`
-3. **Routing key** = domain event name (e.g. `alert.items-found`)
-4. **Never publish directly to a queue** — always publish to `domain-events` with the correct routing key.
-5. **Do not create** `retry-domain-events` or `dead-letter-domain-events` exchanges — MassTransit handles retry and error queues automatically.
-6. **To add a new consumer**: register it in `MassTransitBusConfiguration.cs` — add `x.AddConsumer<>()` and `cfg.ReceiveEndpoint(...)` with the correct queue name and routing key.
+1. **Queue name** = `[bounded_context].[module].[consumer_name_snake_case]`
+2. **Routing key** = domain event name (e.g. `alert.items-found`)
 
 ---
 
@@ -130,6 +135,8 @@ alert.items-found
 - **Scheduled Tasks:** Uses Coravel for periodic alert searches
 - **JWT Auth:** Token-based authentication for API endpoints
 - **SignalR:** Used for real-time web notifications (see `WebNotificationHub`)
+
+---
 
 ## Build, Test & Run Commands
 
@@ -144,7 +151,7 @@ dotnet build
 dotnet test
 
 # Run a single test by fully qualified name
-dotnet test --filter "FullyQualifiedName=WallapopNotification.Tests.Alerts._2_Application.SearchNewItems.ItemSearcherTest.METHOD"
+dotnet test --filter "FullyQualifiedName=Tests.Alerts._2_Application.SearchNewItems.ItemSearcherTest.METHOD"
 
 # Run all tests in a specific class
 dotnet test --filter "FullyQualifiedName~ItemSearcherTest"
