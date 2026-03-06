@@ -4,17 +4,21 @@ Developer guide for coding agents working in the Wallanoti codebase.
 
 ## Project Overview
 
-**Wallanoti** is a Telegram bot that sends real-time notifications when new items matching your search criteria appear on Wallapop (Spanish second-hand marketplace). No more manually checking every 5 minutes - the bot monitors searches and notifies you instantly.
+**Wallanoti** is a Telegram bot that sends real-time notifications when new items matching your search criteria appear
+on Wallapop (Spanish second-hand marketplace). No more manually checking every 5 minutes - the bot monitors searches and
+notifies you instantly.
 
 ## Monorepo Structure
 
 This is a **monorepo** with two main parts:
+
 - **`backend/`** - .NET 8 C# API with Clean Architecture + DDD + CQRS
 - **`frontend/`** - Vue 3 + TypeScript SPA with Vite
 
 ## Technology Stack
 
 ### Backend
+
 - **.NET 8** with ASP.NET Core
 - **Clean Architecture** + **DDD** + **CQRS** + **Event-Driven Architecture**
 - **Entity Framework Core** with PostgreSQL
@@ -26,6 +30,7 @@ This is a **monorepo** with two main parts:
 - **Coravel** for scheduled tasks
 
 ### Frontend
+
 - **Vue 3** with TypeScript
 - **Vite** (Rolldown-based) for build tooling
 - **Pinia** for state management with persistence
@@ -33,34 +38,23 @@ This is a **monorepo** with two main parts:
 - **OpenAPI-generated client** for type-safe API calls
 - **SignalR** for real-time notifications
 
-## Recommended Skills
+## Available Skills
 
-When working on this project, consider invoking these skills:
+| Skill                 | Description                                                    | Location                                                                                      |
+|-----------------------|----------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| `clean-ddd-hexagonal` | Clean Architecture, DDD, Hexagonal patterns for backend design | [SKILL.md](../../../../Users/dayronrey/.config/opencode/skills/clean-ddd-hexagonal/SKILL.md)) |
+| `tdd`                 | Test-Driven Development practices and techniques               | [SKILL.md](../../../../Users/dayronrey/.config/opencode/skills/tdd/SKILL.md))                 |
 
-### `clean-ddd-hexagonal`
-Use for backend architecture work involving:
-- Clean Architecture principles
-- Domain-Driven Design (DDD) patterns
-- Hexagonal Architecture boundaries
-- Entities, Value Objects, Aggregates
-- Domain Events and CQRS
-- Repository Pattern
+### Auto-invoke Skills
 
-### `tdd`
-Use for test-driven development:
-- Red-green-refactor cycle
-- Writing tests before implementation
-- Integration tests
-- Behavior verification through public interfaces
+When performing these actions, ALWAYS invoke the corresponding skill FIRST:
 
-## Domain Model
-
-The backend is organized into **Bounded Contexts** following DDD:
-
-- **Alerts** - Search alert management (create, activate, deactivate, delete)
-- **Notifications** - Notification creation and delivery (Telegram, Web)
-- **Users** - User management and authentication (JWT-based)
-- **AlertCounter** - Statistics and counters for alerts
+| Action                     | Skill                 |
+|----------------------------|-----------------------|
+| Implementing a new feature | `clean-ddd-hexagonal` |
+| Refactoring existing code  | `clean-ddd-hexagonal` |
+| Writing tests              | `tdd`                 |
+| Fixing bugs                | `tdd`                 |
 
 ## Detailed Documentation
 
@@ -69,24 +63,19 @@ For specific implementation guidelines, see:
 - **Backend guidelines:** `backend/AGENTS.md`
 - **Frontend guidelines:** `frontend/AGENTS.md`
 
-## Additional Resources
-
-- **Backend README:** `backend/README.md`
-- **Architecture Documentation:** `backend/docs/ARCHITECTURE.md`
-- **C4 Diagrams:** `backend/docs/c4-diagrams/`
-- **Docker Compose:** `backend/compose.yaml`
-
 ## Quick Start
 
 ### Backend
+
 ```bash
-cd backend
+cd backend/api
 dotnet restore
 dotnet build
-dotnet run --project Apps/Api
+dotnet run --project api
 ```
 
 ### Frontend
+
 ```bash
 cd frontend
 npm install
