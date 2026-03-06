@@ -21,19 +21,24 @@ public sealed class TelegramBotConnection : ITelegramBotConnection
 
     public void OnMessage(TelegramBotClient.OnMessageHandler onMessage)
     {
-        var botClient = (TelegramBotClient)Client();
+        var botClient = GetClient();
         botClient.OnMessage += onMessage;
     }
 
     public void OnUpdate(TelegramBotClient.OnUpdateHandler onUpdate)
     {
-        var botClient = (TelegramBotClient)Client();
+        var botClient = GetClient();
         botClient.OnUpdate += onUpdate;
     }
 
     public Task Close()
     {
-        var botClient = (TelegramBotClient)Client();
+        var botClient = GetClient();
         return botClient.Close();
+    }
+
+    private TelegramBotClient GetClient()
+    {
+        return (TelegramBotClient)Client();
     }
 }

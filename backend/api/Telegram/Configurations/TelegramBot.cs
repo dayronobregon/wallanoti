@@ -49,6 +49,7 @@ public sealed class TelegramBot : IAsyncDisposable
         var commands = await botClient.GetMyCommands();
         var requiredCommands = new[]
         {
+            StartTelegramMessageResolver.Command,
             NewAlertTelegramMessageResolver.Command,
             ListTelegramMessageResolver.Command,
             CancelTelegramMessageResolver.Command
@@ -65,6 +66,7 @@ public sealed class TelegramBot : IAsyncDisposable
 
         await botClient.SetMyCommands(new List<BotCommand>
         {
+            new() { Command = StartTelegramMessageResolver.Command, Description = "Inicia el bot y crea tu usuario" },
             new() { Command = NewAlertTelegramMessageResolver.Command, Description = "Crea una nueva alerta" },
             new() { Command = ListTelegramMessageResolver.Command, Description = "Lista las alertas" },
             new() { Command = CancelTelegramMessageResolver.Command, Description = "Cancela la operación en curso" },
