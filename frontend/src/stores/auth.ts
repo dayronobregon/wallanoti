@@ -1,12 +1,12 @@
 import {defineStore} from 'pinia'
-import {ref, computed, onBeforeMount} from 'vue'
-import type {User} from '@/api'
+import {ref, computed} from 'vue'
+import type {UserDetailsResponse} from '@/api'
 import {useApiClient, useAuthenticatedApiClient} from "@/composables/useApiClient.ts";
 
 export const useAuthStore = defineStore('auth', () => {
         const bearerToken = ref<string | null>(null)
         const needsSignup = ref(false)
-        const user = ref<User | null>(null)
+        const user = ref<UserDetailsResponse | null>(null)
         const waitingForVerificationCode = ref(false)
         const userName = ref<string | null>(null)
 
@@ -29,7 +29,8 @@ export const useAuthStore = defineStore('auth', () => {
             try {
                 let userResponse = await useAuthenticatedApiClient().user.getUser();
                 console.log("userResponse:", userResponse)
-                if (user === undefined) {
+                if (userResponse === undefined || userResponse === null) {
+                    logout()
                     return
                 }
                 user.value = userResponse
@@ -43,7 +44,9 @@ export const useAuthStore = defineStore('auth', () => {
             try {
                 if (userName.value == null || userName.value?.length === 0) return
 
-                let result = await useApiClient().auth.getAuthLogin(userName.value);
+                let result = await useApiClient().auth.postAuthLogin({
+                    userName: userName.value,
+                });
 
                 if (result === undefined) {
                     needsSignup.value = true
@@ -60,13 +63,15 @@ export const useAuthStore = defineStore('auth', () => {
             try {
                 if (verificationCode.length === 0) return false
 
-                let result = await useApiClient().auth.getAuthVerify(userName, verificationCode);
+                let result = await useApiClient().auth.postAuthVerify({
+                    userName,
+                    verificationCode,
+                });
 
                 if (result === undefined) {
                     return false;
                 }
 
-                console.log("Verified, token:", result)
                 verified(result)
                 await getUser()
             } catch (err) {

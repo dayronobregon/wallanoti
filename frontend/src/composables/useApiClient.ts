@@ -18,17 +18,13 @@ export function useApiClient() {
 }
 
 export function useAuthenticatedApiClient() {
-
     if (authenticatedApiClientInstance === null) {
         const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
-        const authStore = useAuthStore()
-        const token = authStore.bearerToken
-
         authenticatedApiClientInstance = new ApiClient({
             BASE: baseUrl,
-            WITH_CREDENTIALS: token != null,
-            TOKEN: token ?? ''
+            WITH_CREDENTIALS: false,
+            TOKEN: async () => useAuthStore().bearerToken ?? ''
         })
     }
 

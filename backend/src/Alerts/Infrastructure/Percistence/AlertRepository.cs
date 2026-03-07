@@ -22,13 +22,24 @@ public sealed class AlertRepository : IAlertRepository
 
     public async Task<IEnumerable<Alert>> All()
     {
-        return await _context.Alerts.Where(x => x.IsActive == true).ToListAsync();
+        return await _context.Alerts
+            .AsNoTracking()
+            .Where(x => x.IsActive == true)
+            .ToListAsync();
     }
 
     public async Task Update(Alert alert)
     {
         _context.Alerts.Update(alert);
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<int> TouchAlert(Guid alertId, DateTime touchedAt)
+    {
+        return await _context.Alerts
+            .Where(x => x.Id == alertId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(alert => alert.UpdatedAt, touchedAt));
     }
 
     public async Task<IEnumerable<Alert>> GetByUserId(long userId)
