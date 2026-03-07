@@ -1,5 +1,5 @@
-import {defineStore} from 'pinia'
 import {ref, computed} from 'vue'
+import {defineStore} from 'pinia'
 import type {UserDetailsResponse} from '@/api'
 import {useApiClient, useAuthenticatedApiClient} from "@/composables/useApiClient.ts";
 import {ApiError} from '@/api/core/ApiError'
