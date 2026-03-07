@@ -2,6 +2,7 @@ import {defineStore} from 'pinia'
 import {ref, computed} from 'vue'
 import type {UserDetailsResponse} from '@/api'
 import {useApiClient, useAuthenticatedApiClient} from "@/composables/useApiClient.ts";
+import {ApiError} from '@/api/core/ApiError'
 
 export const useAuthStore = defineStore('auth', () => {
         const bearerToken = ref<string | null>(null)
@@ -9,6 +10,7 @@ export const useAuthStore = defineStore('auth', () => {
         const user = ref<UserDetailsResponse | null>(null)
         const waitingForVerificationCode = ref(false)
         const userName = ref<string | null>(null)
+        const authError = ref<string | null>(null)
 
         const isAuthenticated = computed(() => bearerToken.value !== null)
 
@@ -17,12 +19,30 @@ export const useAuthStore = defineStore('auth', () => {
             bearerToken.value = null
             needsSignup.value = false
             user.value = null
+            authError.value = null
         }
 
         function verified(token: string) {
             bearerToken.value = token
             needsSignup.value = false
             waitingForVerificationCode.value = false
+            authError.value = null
+        }
+
+        function resolveUserFriendlyAuthError(err: unknown, fallback: string): string {
+            if (err instanceof ApiError && err.status === 429) {
+                return 'Demasiados intentos. Espera un momento e intentalo de nuevo.'
+            }
+
+            if (err instanceof ApiError) {
+                return `${fallback} (HTTP ${err.status})`
+            }
+
+            if (err instanceof Error) {
+                return `${fallback} (${err.message})`
+            }
+
+            return fallback
         }
 
         async function getUser() {
@@ -33,9 +53,12 @@ export const useAuthStore = defineStore('auth', () => {
                     return
                 }
                 user.value = userResponse
+                authError.value = null
 
             } catch (err) {
                 console.error(err)
+                authError.value = 'Tu sesion expiro. Vuelve a iniciar sesion.'
+                logout()
             }
         }
 
@@ -55,6 +78,8 @@ export const useAuthStore = defineStore('auth', () => {
                 waitForVerificationCode()
             } catch (err) {
                 console.error(err)
+                authError.value = resolveUserFriendlyAuthError(err, 'No pudimos enviar el codigo de verificacion')
+                alert(authError.value)
             }
         }
 
@@ -75,6 +100,8 @@ export const useAuthStore = defineStore('auth', () => {
                 await getUser()
             } catch (err) {
                 console.error(err)
+                authError.value = resolveUserFriendlyAuthError(err, 'No pudimos verificar el codigo')
+                alert(authError.value)
             }
 
             return bearerToken.value != null
@@ -93,6 +120,7 @@ export const useAuthStore = defineStore('auth', () => {
             waitingForVerificationCode,
             user,
             userName,
+            authError,
             bearerToken,
             isAuthenticated,
             getUser,

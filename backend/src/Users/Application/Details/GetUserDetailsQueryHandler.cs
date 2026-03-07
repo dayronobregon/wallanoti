@@ -1,5 +1,6 @@
 using MediatR;
 using Wallanoti.Src.Shared.Domain;
+using Wallanoti.Src.Users.Domain.Exceptions;
 using Wallanoti.Src.Users.Domain.Repositories;
 
 namespace Wallanoti.Src.Users.Application.Details;
@@ -27,7 +28,7 @@ public sealed class GetUserDetailsQueryHandler : IRequestHandler<GetUserDetailsQ
 
         if (user is null)
         {
-            throw new UnauthorizedAccessException("User not found");
+            throw new UserNotFoundException(userId);
         }
 
         return new UserDetailsResponse(user.Id, user.UserName);

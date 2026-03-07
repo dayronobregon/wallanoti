@@ -1,6 +1,7 @@
 using Moq;
 using Wallanoti.Src.Shared.Domain;
 using Wallanoti.Src.Users.Application.Details;
+using Wallanoti.Src.Users.Domain.Exceptions;
 using Wallanoti.Src.Users.Domain.Models;
 using Wallanoti.Src.Users.Domain.Repositories;
 
@@ -40,12 +41,12 @@ public class GetUserDetailsQueryHandlerTest
     }
 
     [Fact]
-    public async Task Handle_WhenUserDoesNotExist_ThrowsUnauthorized()
+    public async Task Handle_WhenUserDoesNotExist_ThrowsUserNotFoundException()
     {
         _userContext.SetUser("token", 404, "ghost");
-        _userRepositoryMock.Setup(x => x.Find(404)).ReturnsAsync((User?)null);
+        _userRepositoryMock.Setup(x => x.Find(404)).ReturnsAsync((User)null!);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+        await Assert.ThrowsAsync<UserNotFoundException>(() =>
             _sut.Handle(new GetUserDetailsQuery(), CancellationToken.None));
     }
 }
