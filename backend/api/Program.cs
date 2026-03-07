@@ -61,8 +61,6 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
-    options.KnownProxies.Clear();
 });
 builder.Services.AddSwaggerGen(o =>
 {
@@ -155,16 +153,6 @@ builder.Services.AddScoped<UserContext>();
 
 static string ResolveClientIp(HttpContext httpContext)
 {
-    var xForwardedFor = httpContext.Request.Headers["X-Forwarded-For"].ToString();
-    if (!string.IsNullOrWhiteSpace(xForwardedFor))
-    {
-        var firstProxy = xForwardedFor.Split(',')[0].Trim();
-        if (!string.IsNullOrWhiteSpace(firstProxy))
-        {
-            return firstProxy;
-        }
-    }
-
     return httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 }
 

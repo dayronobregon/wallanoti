@@ -47,7 +47,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<ActionResult<string>> Verify([FromBody] VerifyRequest request)
     {
-        var result = await _mediator.Send(new VerifyUserRequest(request.UserName, request.Code));
+        var result = await _mediator.Send(new VerifyUserRequest(request.UserName, request.VerificationCode));
 
         if (result is null)
         {
@@ -60,4 +60,4 @@ public class AuthController : ControllerBase
 
 public sealed record VerifyRequest(
     [property: Required, StringLength(64, MinimumLength = 3)] string UserName,
-    [property: Required, StringLength(6, MinimumLength = 6)] string Code);
+    [property: Required, StringLength(6, MinimumLength = 6)] string VerificationCode);

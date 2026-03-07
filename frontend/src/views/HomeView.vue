@@ -146,13 +146,26 @@ const isTyping = ref(true)
 const notificationsSection = ref<HTMLElement | null>(null)
 const alertManagementSection = ref<HTMLElement | null>(null)
 const sortOrder = ref<'asc' | 'desc'>('desc')
-const configuredSignalRBaseUrl = import.meta.env.VITE_SIGNALR_URL || import.meta.env.VITE_API_BASE_URL
+const configuredSignalRBaseUrl = import.meta.env.VITE_SIGNALR_URL
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL
 
-if (!configuredSignalRBaseUrl) {
-  console.warn('[SignalR] Neither VITE_SIGNALR_URL nor VITE_API_BASE_URL is configured. Falling back to window.location.origin.')
-}
+const signalRBaseUrl = (() => {
+  if (configuredSignalRBaseUrl) {
+    return configuredSignalRBaseUrl
+  }
 
-const signalRBaseUrl = configuredSignalRBaseUrl || window.location.origin
+  if (configuredApiBaseUrl) {
+    try {
+      return new URL(configuredApiBaseUrl, window.location.origin).origin
+    } catch {
+      console.warn('[SignalR] Invalid VITE_API_BASE_URL. Falling back to window.location.origin.')
+    }
+  } else {
+    console.warn('[SignalR] Neither VITE_SIGNALR_URL nor VITE_API_BASE_URL is configured. Falling back to window.location.origin.')
+  }
+
+  return window.location.origin
+})()
 
 let signalRConnection: signalR.HubConnection | null = null
 
@@ -354,4 +367,3 @@ onUnmounted(() => {
   }
 })
 </script>
-

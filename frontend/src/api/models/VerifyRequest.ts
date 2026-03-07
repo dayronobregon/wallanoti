@@ -4,6 +4,6 @@
 /* eslint-disable */
 export type VerifyRequest = {
     userName?: string | null;
-    code?: string | null;
+    verificationCode?: string | null;
 };
 

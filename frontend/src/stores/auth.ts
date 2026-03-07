@@ -30,6 +30,7 @@ export const useAuthStore = defineStore('auth', () => {
                 let userResponse = await useAuthenticatedApiClient().user.getUser();
                 console.log("userResponse:", userResponse)
                 if (userResponse === undefined || userResponse === null) {
+                    logout()
                     return
                 }
                 user.value = userResponse
@@ -62,14 +63,13 @@ export const useAuthStore = defineStore('auth', () => {
 
                 let result = await useApiClient().auth.postAuthVerify({
                     userName,
-                    code: verificationCode,
+                    verificationCode,
                 });
 
                 if (result === undefined) {
                     return false;
                 }
 
-                console.log("Verified, token:", result)
                 verified(result)
                 await getUser()
             } catch (err) {

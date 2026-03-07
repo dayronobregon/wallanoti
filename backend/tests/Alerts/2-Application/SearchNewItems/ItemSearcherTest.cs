@@ -29,7 +29,7 @@ public class ItemSearcherTest
         _alertRepositoryMock.Setup(x => x.Update(It.IsAny<Alert>()))
             .Returns(Task.CompletedTask);
         _alertRepositoryMock.Setup(x => x.TouchAlert(It.IsAny<Guid>(), It.IsAny<DateTime>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(1);
         _pushNotificationSenderMock.Setup(x => x.Notify(It.IsAny<long>(), It.IsAny<string>()))
             .Returns(Task.CompletedTask);
         _cache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
