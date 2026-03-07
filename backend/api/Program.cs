@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Net;
 using System.Threading.RateLimiting;
 using Coravel;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -61,6 +62,23 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+    foreach (var proxy in builder.Configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>() ?? [])
+    {
+        if (IPAddress.TryParse(proxy, out var ipAddress))
+        {
+            options.KnownProxies.Add(ipAddress);
+        }
+    }
+
+    foreach (var network in builder.Configuration.GetSection("ForwardedHeaders:KnownNetworks").Get<string[]>() ?? [])
+    {
+        var parsedNetwork = TryParseNetwork(network);
+        if (parsedNetwork is { } trustedNetwork)
+        {
+            options.KnownNetworks.Add(trustedNetwork);
+        }
+    }
 });
 builder.Services.AddSwaggerGen(o =>
 {
@@ -154,6 +172,22 @@ builder.Services.AddScoped<UserContext>();
 static string ResolveClientIp(HttpContext httpContext)
 {
     return httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+}
+
+static Microsoft.AspNetCore.HttpOverrides.IPNetwork? TryParseNetwork(string cidr)
+{
+    var parts = cidr.Split('/');
+    if (parts.Length != 2)
+    {
+        return null;
+    }
+
+    if (!IPAddress.TryParse(parts[0], out var prefix) || !int.TryParse(parts[1], out var prefixLength))
+    {
+        return null;
+    }
+
+    return new Microsoft.AspNetCore.HttpOverrides.IPNetwork(prefix, prefixLength);
 }
 
 var app = builder.Build();

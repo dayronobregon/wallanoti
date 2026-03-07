@@ -44,7 +44,9 @@ export const useAuthStore = defineStore('auth', () => {
             try {
                 if (userName.value == null || userName.value?.length === 0) return
 
-                let result = await useApiClient().auth.getAuthLogin(userName.value);
+                let result = await useApiClient().auth.postAuthLogin({
+                    userName: userName.value,
+                });
 
                 if (result === undefined) {
                     needsSignup.value = true

@@ -12,6 +12,7 @@ export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { AlertCounter } from './models/AlertCounter';
 export type { GetAlertsByUserIdResponse } from './models/GetAlertsByUserIdResponse';
+export type { LoginRequest } from './models/LoginRequest';
 export type { NotificationResponse } from './models/NotificationResponse';
 export type { ProblemDetails } from './models/ProblemDetails';
 export type { UserDetailsResponse } from './models/UserDetailsResponse';

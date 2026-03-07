@@ -22,7 +22,10 @@ public sealed class AlertRepository : IAlertRepository
 
     public async Task<IEnumerable<Alert>> All()
     {
-        return await _context.Alerts.Where(x => x.IsActive == true).ToListAsync();
+        return await _context.Alerts
+            .AsNoTracking()
+            .Where(x => x.IsActive == true)
+            .ToListAsync();
     }
 
     public async Task Update(Alert alert)

@@ -2,8 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type VerifyRequest = {
+export type LoginRequest = {
     userName: string;
-    verificationCode: string;
 };
 

@@ -397,21 +397,32 @@
         }
       }
     },
-    "/Auth/login/{userName}": {
-      "get": {
+    "/Auth/login": {
+      "post": {
         "tags": [
           "Auth"
         ],
-        "parameters": [
-          {
-            "name": "userName",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -444,7 +455,9 @@
         "tags": [
           "Auth"
         ],
+        "security": [],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -622,6 +635,18 @@
         },
         "additionalProperties": false
       },
+      "LoginRequest": {
+        "required": [
+          "userName"
+        ],
+        "type": "object",
+        "properties": {
+          "userName": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "NotificationResponse": {
         "type": "object",
         "properties": {
@@ -715,14 +740,16 @@
       },
       "VerifyRequest": {
         "type": "object",
+        "required": [
+          "userName",
+          "verificationCode"
+        ],
         "properties": {
           "userName": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "verificationCode": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           }
         },
         "additionalProperties": false
