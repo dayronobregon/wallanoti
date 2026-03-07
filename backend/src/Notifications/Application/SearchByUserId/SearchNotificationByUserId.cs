@@ -24,7 +24,7 @@ public sealed class SearchNotificationByUserIdHandler : IRequestHandler<SearchNo
             x.Title,
             x.Description,
             x.Location,
-            x.Price?.CurrentPrice ?? 0,
+            x.Price?.CurrentPrice,
             x.Price?.PreviousPrice,
             x.Url.Value,
             x.CreatedAt,
