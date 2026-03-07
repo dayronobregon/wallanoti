@@ -47,7 +47,7 @@ export const useAuthStore = defineStore('auth', () => {
 
         async function getUser() {
             try {
-                let userResponse = await useAuthenticatedApiClient().user.getUser();
+                const userResponse = await useAuthenticatedApiClient().user.getUser();
                 if (userResponse === undefined || userResponse === null) {
                     logout()
                     return
@@ -57,8 +57,13 @@ export const useAuthStore = defineStore('auth', () => {
 
             } catch (err) {
                 console.error(err)
-                authError.value = 'Tu sesion expiro. Vuelve a iniciar sesion.'
-                logout()
+                if (err instanceof ApiError && [401, 403, 404].includes(err.status)) {
+                    logout()
+                    authError.value = 'Tu sesion expiro. Vuelve a iniciar sesion.'
+                    return
+                }
+
+                authError.value = 'No pudimos cargar tu sesion. Intenta de nuevo.'
             }
         }
 
@@ -66,12 +71,14 @@ export const useAuthStore = defineStore('auth', () => {
             try {
                 if (userName.value == null || userName.value?.length === 0) return
 
-                let result = await useApiClient().auth.postAuthLogin({
+                const result = await useApiClient().auth.postAuthLogin({
                     userName: userName.value,
                 });
 
                 if (result === undefined) {
+                    logout()
                     needsSignup.value = true
+                    authError.value = null
                     return
                 }
 
@@ -130,6 +137,8 @@ export const useAuthStore = defineStore('auth', () => {
         }
     },
     {
-        persist: true,
+        persist: {
+            omit: ['authError'],
+        },
     },
 )
