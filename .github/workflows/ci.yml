@@ -5,9 +5,21 @@ name: ci
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+      - develop
+      - feature/*
+      - bugfix/*
+      - hotfix/*
+      - release/*
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+      - develop
+      - feature/*
+      - bugfix/*
+      - hotfix/*
+      - release/*
 
 jobs:
   build:
