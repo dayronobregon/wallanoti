@@ -22,7 +22,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./backend
-          file: Docker/Dockerfile
+          file: docker/Dockerfile
           push: true
           # Make sure to replace with your own namespace and repository
           tags: |
