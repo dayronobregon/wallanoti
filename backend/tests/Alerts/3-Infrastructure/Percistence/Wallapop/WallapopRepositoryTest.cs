@@ -117,6 +117,41 @@ public class WallapopRepositoryTest
     }
 
     [Fact]
+    public async Task Latest_WhenFallbackIsUsed_DisposesFirstAndFinalResponses()
+    {
+        var firstResponse = new TrackableHttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            Content = JsonContent("""
+                {
+                  "status": 400,
+                  "message": "",
+                  "errors": []
+                }
+                """)
+        };
+        var secondResponse = new TrackableHttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = JsonContent("""
+                {
+                  "data": {
+                    "section": {
+                      "items": []
+                    }
+                  }
+                }
+                """)
+        };
+        var requestCount = 0;
+        var handler = new StubHttpMessageHandler(_ => requestCount++ == 0 ? firstResponse : secondResponse);
+        var sut = new WallapopRepository(new HttpClient(handler));
+
+        await sut.Latest(Url.Create("https://es.wallapop.com/app/search?keywords=iphone"));
+
+        Assert.True(firstResponse.Disposed);
+        Assert.True(secondResponse.Disposed);
+    }
+
+    [Fact]
     public async Task Latest_ParsesItemsFromSectionItems()
     {
         var handler = new StubHttpMessageHandler(_ =>
@@ -327,6 +362,26 @@ public class WallapopRepositoryTest
         {
             Requests.Add(request);
             return Task.FromResult(_responseFactory(request));
+        }
+    }
+
+    private sealed class TrackableHttpResponseMessage : HttpResponseMessage
+    {
+        public bool Disposed { get; private set; }
+
+        public TrackableHttpResponseMessage(HttpStatusCode statusCode)
+            : base(statusCode)
+        {
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                Disposed = true;
+            }
+
+            base.Dispose(disposing);
         }
     }
 }

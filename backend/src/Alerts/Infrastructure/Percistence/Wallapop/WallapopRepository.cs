@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using System.Web;
 using Wallanoti.Src.Alerts.Domain.Models;
@@ -35,46 +36,55 @@ public sealed class WallapopRepository : IWallapopRepository
         var sectionSearchUri = $"{SectionSearchUrl}?{query}";
         var response = await SendSearchRequest(sectionSearchUri);
 
-        if ((int)response.StatusCode == 400)
+        if (response.StatusCode == HttpStatusCode.BadRequest)
         {
+            response.Dispose();
             query.Remove("section_type");
             var legacySearchUri = $"{LegacySearchUrl}?{query}";
             response = await SendSearchRequest(legacySearchUri);
         }
 
-        response.EnsureSuccessStatusCode();
-
-        var responseContent = await response.Content.ReadFromJsonAsync<WallapopResponse>();
-        if (responseContent?.Data is null)
-            return [];
-
-        if (responseContent.Data.Section is null)
-            throw new InvalidOperationException("Unexpected Wallapop payload shape: 'data.section' is missing.");
-
-        var wallapopItems = responseContent.Data.Section.Items
-                           ?? responseContent.Data.Section.Payload?.Items
-                           ?? throw new InvalidOperationException(
-                               "Unexpected Wallapop payload shape: neither 'data.section.items' nor 'data.section.payload.items' is present.");
-
-        return wallapopItems.Select(x => new Item
+        try
         {
-            Id = x.Id,
-            WallapopUserId = x.UserId,
-            Title = x.Title,
-            Description = x.Description,
-            CategoryId = x.CategoryId,
-            Price = x.Price is null
-                ? null
-                : Price.Create(x.Price.Amount, x.Discount?.PreviousPrice?.Amount ?? x.PreviousPrice?.Amount),
-            Images = x.Images?.Select(image => image.Urls.Medium).ToList(),
-            Reserved = x.Reserved?.Flag ?? false,
-            Location = Domain.Models.Location.Create(x.Location?.City ?? string.Empty, x.Location?.Region ?? string.Empty),
-            Shipping = x.Shipping?.ItemIsShippable ?? false,
-            Favorited = x.Favorited?.Flag ?? false,
-            WebSlug = x.WebSlug,
-            CreatedAt = x.CreatedAt,
-            ModifiedAt = x.ModifiedAt
-        }).ToList();
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadFromJsonAsync<WallapopResponse>();
+            if (responseContent?.Data is null)
+                return [];
+
+            if (responseContent.Data.Section is null)
+                throw new InvalidOperationException("Unexpected Wallapop payload shape: 'data.section' is missing.");
+
+            var wallapopItems = responseContent.Data.Section.Items
+                                ?? responseContent.Data.Section.Payload?.Items
+                                ?? throw new InvalidOperationException(
+                                    "Unexpected Wallapop payload shape: neither 'data.section.items' nor 'data.section.payload.items' is present.");
+
+            return wallapopItems.Select(x => new Item
+            {
+                Id = x.Id,
+                WallapopUserId = x.UserId,
+                Title = x.Title,
+                Description = x.Description,
+                CategoryId = x.CategoryId,
+                Price = x.Price is null
+                    ? null
+                    : Price.Create(x.Price.Amount, x.Discount?.PreviousPrice?.Amount ?? x.PreviousPrice?.Amount),
+                Images = x.Images?.Select(image => image.Urls.Medium).ToList(),
+                Reserved = x.Reserved?.Flag ?? false,
+                Location = Domain.Models.Location.Create(x.Location?.City ?? string.Empty,
+                    x.Location?.Region ?? string.Empty),
+                Shipping = x.Shipping?.ItemIsShippable ?? false,
+                Favorited = x.Favorited?.Flag ?? false,
+                WebSlug = x.WebSlug,
+                CreatedAt = x.CreatedAt,
+                ModifiedAt = x.ModifiedAt
+            }).ToList();
+        }
+        finally
+        {
+            response.Dispose();
+        }
     }
 
     private async Task<HttpResponseMessage> SendSearchRequest(string url)
