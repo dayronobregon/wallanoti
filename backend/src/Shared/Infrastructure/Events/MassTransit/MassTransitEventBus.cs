@@ -5,8 +5,8 @@ namespace Wallanoti.Src.Shared.Infrastructure.Events.MassTransit;
 
 /// <summary>
 /// IEventBus implementation backed by MassTransit.
-/// Converts each DomainEvent into a DomainEventEnvelope and publishes it using
-/// MassTransit's default RabbitMQ conventions.
+/// Publishes each concrete DomainEvent directly so MassTransit applies
+/// native serialization and message-type routing.
 /// </summary>
 public sealed class MassTransitEventBus(IPublishEndpoint publishEndpoint) : IEventBus
 {
@@ -21,14 +21,6 @@ public sealed class MassTransitEventBus(IPublishEndpoint publishEndpoint) : IEve
 
     private async Task PublishEvent(DomainEvent domainEvent)
     {
-        var envelope = new DomainEventEnvelope
-        {
-            EventId = domainEvent.EventId,
-            OccurredOn = domainEvent.OccurredOn,
-            EventType = domainEvent.GetType().AssemblyQualifiedName!,
-            Data = domainEvent.ToJson()
-        };
-
-        await publishEndpoint.Publish(envelope);
+        await publishEndpoint.Publish(domainEvent, domainEvent.GetType());
     }
 }

@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Wallanoti.Src.Alerts.Domain.Models;
 using Wallanoti.Src.Shared.Domain.Events;
 
@@ -22,26 +21,4 @@ public sealed class NewItemsFoundEvent : DomainEvent
     }
 
     public override string EventName() => "alert.items-found";
-
-    public override string ToJson()
-    {
-        var obj = new
-        {
-            userId = UserId,
-            items = Items
-        };
-
-        return JsonSerializer.Serialize(obj);
-    }
-
-    public override DomainEvent FromPrimitives(string eventId, string occurredOn, string data)
-    {
-        var document = JsonDocument.Parse(data);
-        var root = document.RootElement;
-
-        var userId = root.GetProperty("userId").GetInt64();
-        var items = root.GetProperty("items").Deserialize<List<Item>>();
-
-        return new NewItemsFoundEvent(eventId, occurredOn, userId, items);
-    }
 }
