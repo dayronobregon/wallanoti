@@ -1,0 +1,35 @@
+# Directorios de build
+**/bin/
+**/obj/
+**/out/
+
+# Archivos de usuario
+**/.vs/
+**/.vscode/
+**/.idea/
+**/.DS_Store
+**/*.user
+**/*.suo
+**/*.userosscache
+**/*.sln.docstates
+
+# Docker
+**/docker-compose*
+**/Dockerfile*
+**/.dockerignore
+
+# Git
+**/.git/
+**/.gitignore
+**/.gitattributes
+
+# Tests
+**/tests/
+
+# Documentación
+**/*.md
+!README.md
+
+# Otros
+**/node_modules/
+

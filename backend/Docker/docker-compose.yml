@@ -44,6 +44,35 @@ services:
     networks:
       - wallanoti
 
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: wallanoti-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080;https://+:8081
+      ConnectionStrings__DefaultConnection: Host=postgres;Database=wallanoti_db;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Redis__Configuration: redis:6379
+    depends_on:
+      - postgres
+      - rabbitmq
+      - redis
+    networks:
+      - wallanoti
+
 networks:
   wallanoti:
     driver: bridge
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  redis_data:
