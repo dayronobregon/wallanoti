@@ -26,6 +26,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\src\src.csproj" />
+      <ProjectReference Include="..\api\api.csproj" />
     </ItemGroup>
 
     <ItemGroup>

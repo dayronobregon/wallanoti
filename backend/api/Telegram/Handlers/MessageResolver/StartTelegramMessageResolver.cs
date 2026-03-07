@@ -10,9 +10,9 @@ public sealed class StartTelegramMessageResolver : IMessageResolver
 {
     public const string Command = "/start";
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly TelegramBotConnection _botConnection;
+    private readonly ITelegramBotConnection _botConnection;
 
-    public StartTelegramMessageResolver(IServiceScopeFactory scopeFactory, TelegramBotConnection botConnection)
+    public StartTelegramMessageResolver(IServiceScopeFactory scopeFactory, ITelegramBotConnection botConnection)
     {
         _scopeFactory = scopeFactory;
         _botConnection = botConnection;
@@ -30,6 +30,6 @@ public sealed class StartTelegramMessageResolver : IMessageResolver
         await mediator.Send(new CreateUserCommand(message.Chat.Id, message.Chat.Username));
 
         await _botConnection.Client().SendMessage(message.Chat.Id,
-            "Ya puedes crear alertas con el comando /alert. Ejemplo: /alert, Televisor LG 55 pulgadas, https://es.wallapop.com/item/televisor-lg-55-pulgadas-123456789");
+            "Ya puedes crear alertas con el comando /alert. Simplemente escribe /alert y te pediré la URL de búsqueda de Wallapop 🔗");
     }
 }

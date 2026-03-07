@@ -13,7 +13,7 @@ public sealed class TelegramBotConnection : ITelegramBotConnection
         _token = configuration.GetValue<string>("TelegramBotToken");
     }
 
-    public TelegramBotClient Client()
+    public ITelegramBotClient Client()
     {
         var options = new TelegramBotClientOptions(_token) { RetryThreshold = 120, RetryCount = 2 };
         return BotClient ??= new TelegramBotClient(options);
