@@ -303,9 +303,7 @@ function startSignalR() {
   const authStore = useAuthStore()
 
   const accessTokenFactory = async () => {
-    let token = authStore.bearerToken
-    console.log("Access Token Factory called, token:", token)
-    return token || ''
+    return authStore.bearerToken || ''
   }
 
   const hubUrl = `${signalRBaseUrl.replace(/\/$/, '')}/hub/notifications`
@@ -322,7 +320,7 @@ function startSignalR() {
       await signalRConnection!.start()
       console.log("SignalR Connected.")
     } catch (err) {
-      console.log(err)
+      console.error(err)
       setTimeout(start, 5000)
     }
   }

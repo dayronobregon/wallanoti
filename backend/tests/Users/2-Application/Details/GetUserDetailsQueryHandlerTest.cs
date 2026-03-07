@@ -38,4 +38,14 @@ public class GetUserDetailsQueryHandlerTest
 
         _userRepositoryMock.Verify(x => x.Find(It.IsAny<long>()), Times.Never);
     }
+
+    [Fact]
+    public async Task Handle_WhenUserDoesNotExist_ThrowsUnauthorized()
+    {
+        _userContext.SetUser("token", 404, "ghost");
+        _userRepositoryMock.Setup(x => x.Find(404)).ReturnsAsync((User?)null);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _sut.Handle(new GetUserDetailsQuery(), CancellationToken.None));
+    }
 }

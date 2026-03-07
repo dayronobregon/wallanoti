@@ -28,7 +28,6 @@ export const useAuthStore = defineStore('auth', () => {
         async function getUser() {
             try {
                 let userResponse = await useAuthenticatedApiClient().user.getUser();
-                console.log("userResponse:", userResponse)
                 if (userResponse === undefined || userResponse === null) {
                     logout()
                     return
