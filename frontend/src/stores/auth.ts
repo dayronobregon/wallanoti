@@ -73,7 +73,7 @@ export const useAuthStore = defineStore('auth', () => {
 
                 const result = await useApiClient().auth.postAuthLogin({
                     userName: userName.value,
-                });
+                }) as string | undefined;
 
                 if (result === undefined) {
                     logout()
@@ -97,7 +97,7 @@ export const useAuthStore = defineStore('auth', () => {
                 const result = await useApiClient().auth.postAuthVerify({
                     userName,
                     verificationCode,
-                });
+                }) as string | undefined;
 
                 if (result === undefined) {
                     return false;
