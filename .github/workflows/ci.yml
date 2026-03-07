@@ -37,4 +37,5 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      working-directory: backend
+      run: dotnet test tests/tests.csproj --no-build --verbosity normal
