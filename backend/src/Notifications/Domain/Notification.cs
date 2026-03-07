@@ -11,7 +11,7 @@ public sealed class Notification(
     string title,
     string description,
     string location,
-    Price price,
+    Price? price,
     Url url,
     DateTime createdAt,
     List<string>? images = null)
@@ -22,7 +22,7 @@ public sealed class Notification(
     public string Title { get; } = title;
     public string Description { get; } = description;
     public string Location { get; } = location;
-    public Price Price { get; } = price;
+    public Price? Price { get; } = price;
     public Url Url { get; } = url;
     public List<string>? Images { get; } = images;
     public DateTime CreatedAt { get; } = createdAt;
@@ -60,7 +60,7 @@ public sealed class Notification(
         return message.ToString();
     }
 
-    public static Notification Create(Guid id, long userId, string title, string description, Price price,
+    public static Notification Create(Guid id, long userId, string title, string description, Price? price,
         List<string>? images, string location, Url url)
     {
         var notification = new Notification(

@@ -40,9 +40,16 @@ public sealed class WallapopRepository : IWallapopRepository
         var response = await _client.SendAsync(request);
 
         var responseContent = await response.Content.ReadFromJsonAsync<WallapopResponse>();
-        var wallapopItems = responseContent?.Data?.Section?.Items
-                           ?? responseContent?.Data?.Section?.Payload?.Items
-                           ?? [];
+        if (responseContent?.Data is null)
+            return [];
+
+        if (responseContent.Data.Section is null)
+            throw new InvalidOperationException("Unexpected Wallapop payload shape: 'data.section' is missing.");
+
+        var wallapopItems = responseContent.Data.Section.Items
+                           ?? responseContent.Data.Section.Payload?.Items
+                           ?? throw new InvalidOperationException(
+                               "Unexpected Wallapop payload shape: neither 'data.section.items' nor 'data.section.payload.items' is present.");
 
         return wallapopItems.Select(x => new Item
         {
@@ -51,7 +58,9 @@ public sealed class WallapopRepository : IWallapopRepository
             Title = x.Title,
             Description = x.Description,
             CategoryId = x.CategoryId,
-            Price = Price.Create(x.Price?.Amount ?? 0, x.Discount?.PreviousPrice?.Amount ?? x.PreviousPrice?.Amount),
+            Price = x.Price is null
+                ? null
+                : Price.Create(x.Price.Amount, x.Discount?.PreviousPrice?.Amount ?? x.PreviousPrice?.Amount),
             Images = x.Images?.Select(image => image.Urls.Medium).ToList(),
             Reserved = x.Reserved?.Flag ?? false,
             Location = Domain.Models.Location.Create(x.Location?.City ?? string.Empty, x.Location?.Region ?? string.Empty),

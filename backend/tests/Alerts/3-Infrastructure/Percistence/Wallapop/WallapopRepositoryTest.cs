@@ -94,7 +94,8 @@ public class WallapopRepositoryTest
 
         var item = Assert.Single(items!);
         Assert.Equal("item-1", item.Id);
-        Assert.Equal(500, item.Price.CurrentPrice);
+        Assert.NotNull(item.Price);
+        Assert.Equal(500, item.Price!.CurrentPrice);
         Assert.Equal(550, item.Price.PreviousPrice);
     }
 
@@ -153,8 +154,80 @@ public class WallapopRepositoryTest
 
         var item = Assert.Single(items!);
         Assert.Equal("item-legacy", item.Id);
-        Assert.Equal(100, item.Price.CurrentPrice);
+        Assert.NotNull(item.Price);
+        Assert.Equal(100, item.Price!.CurrentPrice);
         Assert.Equal(120, item.Price.PreviousPrice);
+    }
+
+    [Fact]
+    public async Task Latest_WhenResponseHasDataButMissingSection_ShouldThrow()
+    {
+        var handler = new StubHttpMessageHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = JsonContent("""
+                    {
+                      "data": {}
+                    }
+                    """)
+            });
+        var sut = new WallapopRepository(new HttpClient(handler));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.Latest(Url.Create("https://es.wallapop.com/app/search?keywords=iphone")));
+    }
+
+    [Fact]
+    public async Task Latest_WhenPriceIsMissing_ShouldKeepItemPriceNull()
+    {
+        var handler = new StubHttpMessageHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = JsonContent("""
+                    {
+                      "data": {
+                        "section": {
+                          "items": [
+                            {
+                              "id": "item-no-price",
+                              "user_id": "user-1",
+                              "title": "No price",
+                              "description": "without price",
+                              "category_id": 1,
+                              "images": [],
+                              "reserved": { "flag": false },
+                              "location": {
+                                "latitude": 0,
+                                "longitude": 0,
+                                "postal_code": "08001",
+                                "city": "Barcelona",
+                                "region": "Catalunya",
+                                "region2": "",
+                                "country_code": "ES"
+                              },
+                              "shipping": {
+                                "shipping_price": false,
+                                "user_allows_shipping": true,
+                                "cost_configuration_id": "1"
+                              },
+                              "favorited": { "flag": false },
+                              "bump": { "type": "none" },
+                              "web_slug": "no-price-slug",
+                              "created_at": 1,
+                              "modified_at": 1
+                            }
+                          ]
+                        }
+                      }
+                    }
+                    """)
+            });
+        var sut = new WallapopRepository(new HttpClient(handler));
+
+        var items = await sut.Latest(Url.Create("https://es.wallapop.com/app/search?keywords=noprice"));
+
+        var item = Assert.Single(items!);
+        Assert.Null(item.Price);
     }
 
     private static StringContent JsonContent(string json)
