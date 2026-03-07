@@ -1,5 +1,6 @@
 using Wallanoti.Src.Notifications.Domain;
 using Wallanoti.Src.Shared.Domain.ValueObjects;
+using System.Text.Json;
 
 namespace Wallanoti.Tests.Notifications._1_Domain;
 
@@ -38,5 +39,44 @@ public class NotificationTest
         Assert.Contains(notification.Price.CurrentPrice.ToString(), formatted);
         Assert.Contains(notification.Location, formatted);
         Assert.Contains(notification.Url.Value, formatted);
+    }
+
+    [Fact]
+    public void NotificationCreatedEvent_SystemTextJsonRoundtrip_ShouldPreservePriceAndUrl()
+    {
+        var notification = Notification.Create(Guid.NewGuid(), 10, "Bike", "Great condition",
+            Price.Create(200, 250), new List<string>(), "Madrid", Url.CreateFromSlug("bike-slug"));
+        var createdEvent = new NotificationCreatedEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString("O"),
+            notification);
+
+        var payload = JsonSerializer.Serialize(createdEvent);
+        var restored = JsonSerializer.Deserialize<NotificationCreatedEvent>(payload);
+
+        Assert.NotNull(restored);
+
+        Assert.NotNull(restored!.Notification.Price);
+        Assert.Equal(notification.Price.CurrentPrice, restored.Notification.Price.CurrentPrice);
+        Assert.NotNull(restored.Notification.Url);
+        Assert.Equal(notification.Url.Value, restored.Notification.Url.Value);
+    }
+
+    [Fact]
+    public void FormattedString_WhenPriceOrUrlIsMissing_ShouldNotThrowAndUseFallbacks()
+    {
+        var notification = new Notification(
+            Guid.NewGuid(),
+            10,
+            "Bike",
+            "Great condition",
+            "Madrid",
+            null!,
+            null!,
+            DateTime.UtcNow,
+            []);
+
+        var formatted = notification.FormattedString();
+
+        Assert.Contains("<b>Price:</b> N/A", formatted);
+        Assert.DoesNotContain("<a href='", formatted);
     }
 }

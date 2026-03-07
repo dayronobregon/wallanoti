@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Wallanoti.Src.Shared.Domain.Events;
 using Wallanoti.Src.Shared.Domain.ValueObjects;
@@ -29,12 +30,23 @@ public sealed class Notification(
     public string FormattedString()
     {
         var message = new StringBuilder();
-        message.Append($"<b>{Title}</b>\n");
-        message.Append($"<i>{Description}</i>\n");
-        message.Append($"<b>Price:</b> {Price.CurrentPrice}\n");
-        message.Append($"<b>Location:</b> {Location}\n");
-        message.Append('\n'); // Agregar una línea en blanco
-        message.Append($"<a href='{Url.Value}'>{Title}</a>\n");
+        var safeTitle = string.IsNullOrWhiteSpace(Title) ? "Notification" : Title;
+        var safeDescription = string.IsNullOrWhiteSpace(Description) ? "No description" : Description;
+        var safePrice = Price is null
+            ? "N/A"
+            : Price.CurrentPrice.ToString(CultureInfo.InvariantCulture);
+        var safeLocation = string.IsNullOrWhiteSpace(Location) ? "Unknown" : Location;
+
+        message.Append($"<b>{safeTitle}</b>\n");
+        message.Append($"<i>{safeDescription}</i>\n");
+        message.Append($"<b>Price:</b> {safePrice}\n");
+        message.Append($"<b>Location:</b> {safeLocation}\n");
+
+        if (!string.IsNullOrWhiteSpace(Url?.Value))
+        {
+            message.Append('\n');
+            message.Append($"<a href='{Url.Value}'>{safeTitle}</a>\n");
+        }
 
         return message.ToString();
     }

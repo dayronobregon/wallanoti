@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Wallanoti.Src.Shared.Domain.Events;
 
 namespace Wallanoti.Src.Users.Domain.Events;
@@ -19,15 +18,5 @@ public sealed class UserCreatedDomainEvent : DomainEvent
     public override string EventName()
     {
         return "user.usercreated";
-    }
-
-    public override string ToJson()
-    {
-        return JsonSerializer.Serialize(this);
-    }
-
-    public override DomainEvent FromPrimitives(string eventId, string occurredOn, string data)
-    {
-        throw new NotImplementedException();
     }
 }

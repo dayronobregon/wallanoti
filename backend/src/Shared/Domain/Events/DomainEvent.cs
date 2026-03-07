@@ -2,8 +2,8 @@ namespace Wallanoti.Src.Shared.Domain.Events;
 
 public abstract class DomainEvent
 {
-    public string EventId { get; }
-    public string OccurredOn { get; }
+    public string EventId { get; init; } = string.Empty;
+    public string OccurredOn { get; init; } = string.Empty;
 
     public DomainEvent()
     {
@@ -16,8 +16,4 @@ public abstract class DomainEvent
     }
 
     public abstract string EventName();
-
-    public abstract string ToJson();
-
-    public abstract DomainEvent FromPrimitives(string eventId, string occurredOn, string data);
 }
