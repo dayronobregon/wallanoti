@@ -120,6 +120,7 @@ export const useAuthStore = defineStore('auth', () => {
             needsSignup.value = false
             user.value = null
             waitingForVerificationCode.value = false
+            authError.value = null
         }
 
         return {
