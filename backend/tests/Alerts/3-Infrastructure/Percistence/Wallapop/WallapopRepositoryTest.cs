@@ -37,6 +37,83 @@ public class WallapopRepositoryTest
         Assert.Equal("today", query["time_filter"]);
         Assert.Equal("newest", query["order_by"]);
         Assert.Equal("organic_search_results", query["section_type"]);
+        Assert.Equal("1", query["step"]);
+        Assert.Equal("keywords", query["source"]);
+        Assert.Equal("40", query["limit"]);
+    }
+
+    [Fact]
+    public async Task Latest_DoesNotSendBodyOrCookieHeader()
+    {
+        var handler = new StubHttpMessageHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = JsonContent("""
+                    {
+                      "data": {
+                        "section": {
+                          "items": []
+                        }
+                      }
+                    }
+                    """)
+            });
+        var sut = new WallapopRepository(new HttpClient(handler));
+
+        await sut.Latest(Url.Create("https://es.wallapop.com/app/search?keywords=iphone"));
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Null(request.Content);
+        Assert.False(request.Headers.TryGetValues("Cookie", out _));
+    }
+
+    [Fact]
+    public async Task Latest_WhenSectionEndpointReturnsBadRequest_FallsBackToLegacySearchEndpoint()
+    {
+        var requestCount = 0;
+        var handler = new StubHttpMessageHandler(_ =>
+        {
+            requestCount++;
+            if (requestCount == 1)
+            {
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = JsonContent("""
+                        {
+                          "status": 400,
+                          "message": "",
+                          "errors": []
+                        }
+                        """)
+                };
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = JsonContent("""
+                    {
+                      "data": {
+                        "section": {
+                          "items": []
+                        }
+                      }
+                    }
+                    """)
+            };
+        });
+        var sut = new WallapopRepository(new HttpClient(handler));
+
+        await sut.Latest(Url.Create("https://es.wallapop.com/app/search?keywords=iphone"));
+
+        Assert.Equal(2, handler.Requests.Count);
+
+        var firstRequest = handler.Requests[0];
+        Assert.Equal("/api/v3/search/section", firstRequest.RequestUri!.AbsolutePath);
+
+        var secondRequest = handler.Requests[1];
+        Assert.Equal("/api/v3/search", secondRequest.RequestUri!.AbsolutePath);
+        var query = HttpUtility.ParseQueryString(secondRequest.RequestUri.Query);
+        Assert.Null(query["section_type"]);
     }
 
     [Fact]

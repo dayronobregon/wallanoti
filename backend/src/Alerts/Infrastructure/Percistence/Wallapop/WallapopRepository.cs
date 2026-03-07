@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Web;
 using Wallanoti.Src.Alerts.Domain.Models;
@@ -9,7 +8,8 @@ namespace Wallanoti.Src.Alerts.Infrastructure.Percistence.Wallapop;
 public sealed class WallapopRepository : IWallapopRepository
 {
     private readonly HttpClient _client;
-    private const string BaseUrl = "https://api.wallapop.com/api/v3/search/section";
+    private const string SectionSearchUrl = "https://api.wallapop.com/api/v3/search/section";
+    private const string LegacySearchUrl = "https://api.wallapop.com/api/v3/search";
 
     public WallapopRepository()
         : this(new HttpClient())
@@ -28,16 +28,21 @@ public sealed class WallapopRepository : IWallapopRepository
         query["time_filter"] = "today";
         query["order_by"] = "newest";
         query["section_type"] = "organic_search_results";
+        query["step"] = "1";
+        query["source"] = "keywords";
+        query["limit"] = "40";
 
-        var request = new HttpRequestMessage(HttpMethod.Get, $"{BaseUrl}?{query}");
+        var sectionSearchUri = $"{SectionSearchUrl}?{query}";
+        var response = await SendSearchRequest(sectionSearchUri);
 
-        request.Headers.Add("Host", "api.wallapop.com");
-        request.Headers.Add("X-DeviceOS", "0");
-        request.Headers.Add("Cookie", "device_id=dbe99ffa-98e8-49b6-b305-44842b309020");
-        var content = new StringContent(string.Empty);
-        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-        request.Content = content;
-        var response = await _client.SendAsync(request);
+        if ((int)response.StatusCode == 400)
+        {
+            query.Remove("section_type");
+            var legacySearchUri = $"{LegacySearchUrl}?{query}";
+            response = await SendSearchRequest(legacySearchUri);
+        }
+
+        response.EnsureSuccessStatusCode();
 
         var responseContent = await response.Content.ReadFromJsonAsync<WallapopResponse>();
         if (responseContent?.Data is null)
@@ -70,5 +75,13 @@ public sealed class WallapopRepository : IWallapopRepository
             CreatedAt = x.CreatedAt,
             ModifiedAt = x.ModifiedAt
         }).ToList();
+    }
+
+    private async Task<HttpResponseMessage> SendSearchRequest(string url)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Host", "api.wallapop.com");
+        request.Headers.Add("X-DeviceOS", "0");
+        return await _client.SendAsync(request);
     }
 }
