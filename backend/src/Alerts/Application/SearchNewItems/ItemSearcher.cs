@@ -77,7 +77,7 @@ public sealed class ItemSearcher
             if (newItems.Count == 0)
             {
                 alert.Touch();
-                await _alertRepository.Update(alert);
+                await _alertRepository.TouchAlert(alert.Id, alert.UpdatedAt!.Value);
                 continue;
             }
 

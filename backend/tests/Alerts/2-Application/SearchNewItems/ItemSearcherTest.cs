@@ -28,6 +28,8 @@ public class ItemSearcherTest
             .Returns(Task.CompletedTask);
         _alertRepositoryMock.Setup(x => x.Update(It.IsAny<Alert>()))
             .Returns(Task.CompletedTask);
+        _alertRepositoryMock.Setup(x => x.TouchAlert(It.IsAny<Guid>(), It.IsAny<DateTime>()))
+            .Returns(Task.CompletedTask);
         _pushNotificationSenderMock.Setup(x => x.Notify(It.IsAny<long>(), It.IsAny<string>()))
             .Returns(Task.CompletedTask);
         _cache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
@@ -76,6 +78,7 @@ public class ItemSearcherTest
     {
         var now = DateTime.UtcNow;
         var alert = BuildAlert(now, now);
+        var before = alert.UpdatedAt;
         var items = new List<Item>
         {
             BuildItem("item-1", now.AddMinutes(-10))
@@ -87,7 +90,9 @@ public class ItemSearcherTest
         await _sut.Execute();
 
         _eventBusMock.Verify(x => x.Publish(It.IsAny<List<DomainEvent>>()), Times.Never);
-        _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Once);
+        _alertRepositoryMock.Verify(x => x.TouchAlert(alert.Id, It.IsAny<DateTime>()), Times.Once);
+        _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Never);
+        Assert.True(alert.UpdatedAt > before);
         Assert.Null(_cache.GetString(alert.GetCacheKey()));
     }
 
@@ -96,6 +101,7 @@ public class ItemSearcherTest
     {
         var createdAt = DateTime.UtcNow;
         var alert = BuildAlert(createdAt.AddMinutes(-30), createdAt.AddMinutes(-20));
+        var before = alert.UpdatedAt;
         var cachedId = "item-cached";
         var items = new List<Item>
         {
@@ -109,7 +115,9 @@ public class ItemSearcherTest
         await _sut.Execute();
 
         _eventBusMock.Verify(x => x.Publish(It.IsAny<List<DomainEvent>>()), Times.Never);
-        _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Once);
+        _alertRepositoryMock.Verify(x => x.TouchAlert(alert.Id, It.IsAny<DateTime>()), Times.Once);
+        _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Never);
+        Assert.True(alert.UpdatedAt > before);
         Assert.NotNull(_cache.GetString(alert.GetCacheKey()));
     }
 

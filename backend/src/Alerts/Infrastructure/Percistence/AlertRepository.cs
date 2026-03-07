@@ -31,6 +31,14 @@ public sealed class AlertRepository : IAlertRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task TouchAlert(Guid alertId, DateTime touchedAt)
+    {
+        await _context.Alerts
+            .Where(x => x.Id == alertId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(alert => alert.UpdatedAt, touchedAt));
+    }
+
     public async Task<IEnumerable<Alert>> GetByUserId(long userId)
     {
         return await _context.Alerts

@@ -75,7 +75,7 @@ public sealed class Notification(
             images);
 
         notification.Record(new NotificationCreatedEvent(notification.Id.ToString(),
-            TimeProvider.System.GetUtcNow().ToString(), notification));
+            TimeProvider.System.GetUtcNow().ToString("o"), notification));
 
         return notification;
     }

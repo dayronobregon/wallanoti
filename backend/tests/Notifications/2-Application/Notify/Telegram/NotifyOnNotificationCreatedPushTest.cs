@@ -16,7 +16,8 @@ public class NotifyOnNotificationCreatedPushTest
         _pushSenderMock.Setup(x => x.Notify(It.IsAny<Notification>())).Returns(Task.CompletedTask);
         var notification = Notification.Create(Guid.NewGuid(), 3, "title", "description", Price.Create(10, 12),
             new List<string>(), "city", Url.CreateFromSlug("slug"));
-        var @event = new NotificationCreatedEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString(), notification);
+        var @event = new NotificationCreatedEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString("o"),
+            notification);
 
         await handler.Handle(@event);
 

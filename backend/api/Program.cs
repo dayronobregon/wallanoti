@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using Coravel;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.RateLimiting;
 using Wallanoti.Api;
@@ -57,6 +58,12 @@ builder.Services.AddSchedulerTask();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 builder.Services.AddSwaggerGen(o =>
 {
     var securityScheme = new Microsoft.OpenApi.Models.OpenApiSecurityScheme
@@ -123,7 +130,7 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("auth-login", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            partitionKey: ResolveClientIp(httpContext),
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 10,
@@ -134,7 +141,7 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("auth-verify", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            partitionKey: ResolveClientIp(httpContext),
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 5,
@@ -146,6 +153,21 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.AddScoped<UserContext>();
 
+static string ResolveClientIp(HttpContext httpContext)
+{
+    var xForwardedFor = httpContext.Request.Headers["X-Forwarded-For"].ToString();
+    if (!string.IsNullOrWhiteSpace(xForwardedFor))
+    {
+        var firstProxy = xForwardedFor.Split(',')[0].Trim();
+        if (!string.IsNullOrWhiteSpace(firstProxy))
+        {
+            return firstProxy;
+        }
+    }
+
+    return httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+}
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -154,6 +176,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseForwardedHeaders();
 
 app.UseHttpsRedirection();
 

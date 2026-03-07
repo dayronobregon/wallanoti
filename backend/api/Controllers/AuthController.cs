@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using MediatR;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
@@ -57,4 +58,6 @@ public class AuthController : ControllerBase
     }
 }
 
-public sealed record VerifyRequest(string UserName, string Code);
+public sealed record VerifyRequest(
+    [property: Required, StringLength(64, MinimumLength = 3)] string UserName,
+    [property: Required, StringLength(6, MinimumLength = 6)] string Code);

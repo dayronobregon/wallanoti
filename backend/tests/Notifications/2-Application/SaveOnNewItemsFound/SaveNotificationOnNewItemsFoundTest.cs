@@ -27,7 +27,7 @@ public class SaveNotificationOnNewItemsFoundTest
     public async Task Handle_WithItems_ShouldPersistNotificationsAndPublishEvents()
     {
         var items = new List<Item> { BuildItem("one"), BuildItem("two") };
-        var @event = new NewItemsFoundEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString(), Guid.NewGuid(), 7,
+        var @event = new NewItemsFoundEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString("o"), Guid.NewGuid(), 7,
             items);
 
         await _sut.Handle(@event);
@@ -41,7 +41,7 @@ public class SaveNotificationOnNewItemsFoundTest
     [Fact]
     public async Task Handle_WithoutItems_DoesNothing()
     {
-        var @event = new NewItemsFoundEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString(), Guid.NewGuid(), 7,
+        var @event = new NewItemsFoundEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString("o"), Guid.NewGuid(), 7,
             null);
 
         await _sut.Handle(@event);
