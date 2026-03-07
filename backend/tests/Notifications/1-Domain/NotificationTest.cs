@@ -79,4 +79,24 @@ public class NotificationTest
         Assert.Contains("<b>Price:</b> N/A", formatted);
         Assert.DoesNotContain("<a href='", formatted);
     }
+
+    [Fact]
+    public void FormattedString_WhenPreviousPriceIsHigher_ShouldShowPriceDroppedMessage()
+    {
+        var notification = Notification.Create(
+            Guid.NewGuid(),
+            10,
+            "Bike",
+            "Great condition",
+            Price.Create(200, 250),
+            [],
+            "Madrid",
+            Url.CreateFromSlug("bike-slug"));
+
+        var formatted = notification.FormattedString();
+
+        Assert.Contains("Price dropped", formatted);
+        Assert.Contains("<b>Price:</b> 200", formatted);
+        Assert.Contains("<b>Previous price:</b> 250", formatted);
+    }
 }

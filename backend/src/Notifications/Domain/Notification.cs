@@ -35,11 +35,20 @@ public sealed class Notification(
         var safePrice = Price is null
             ? "N/A"
             : Price.CurrentPrice.ToString(CultureInfo.InvariantCulture);
+        var safePreviousPrice = Price?.PreviousPrice?.ToString(CultureInfo.InvariantCulture);
         var safeLocation = string.IsNullOrWhiteSpace(Location) ? "Unknown" : Location;
+        var hasPriceDrop = Price?.PreviousPrice.HasValue == true && Price.PreviousPrice.Value > Price.CurrentPrice;
+
+        if (hasPriceDrop)
+            message.Append("<b>Price dropped!</b>\n");
 
         message.Append($"<b>{safeTitle}</b>\n");
         message.Append($"<i>{safeDescription}</i>\n");
         message.Append($"<b>Price:</b> {safePrice}\n");
+
+        if (hasPriceDrop)
+            message.Append($"<b>Previous price:</b> {safePreviousPrice}\n");
+
         message.Append($"<b>Location:</b> {safeLocation}\n");
 
         if (!string.IsNullOrWhiteSpace(Url?.Value))
