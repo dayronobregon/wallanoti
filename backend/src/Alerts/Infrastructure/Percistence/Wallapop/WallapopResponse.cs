@@ -9,19 +9,20 @@ public sealed class WallapopResponse
 
 public sealed class Data
 {
-    public Section Section { get; set; }
+    public Section? Section { get; set; }
 }
 
 public class Section
 {
-    public Payload Payload { get; set; }
+    public List<WallapopItem>? Items { get; set; }
+    public Payload? Payload { get; set; }
 }
 
 public class Payload
 {
-    public string Order { get; set; }
-    public string Title { get; set; }
-    public List<WallapopItem> Items { get; set; }
+    public string? Order { get; set; }
+    public string? Title { get; set; }
+    public List<WallapopItem>? Items { get; set; }
 }
 
 public class WallapopItem
@@ -37,13 +38,13 @@ public class WallapopItem
     [JsonPropertyName("category_id")]
     public int CategoryId { get; set; }
 
-    public PriceW Price { get; set; }
+    public PriceW? Price { get; set; }
     public List<Image>? Images { get; set; }
-    public Reserved Reserved { get; set; }
-    public Location Location { get; set; }
-    public Shipping Shipping { get; set; }
-    public Favorited Favorited { get; set; }
-    public Bump Bump { get; set; }
+    public Reserved? Reserved { get; set; }
+    public Location? Location { get; set; }
+    public Shipping? Shipping { get; set; }
+    public Favorited? Favorited { get; set; }
+    public Bump? Bump { get; set; }
 
     [JsonPropertyName("web_slug")]
     public string WebSlug { get; set; }
@@ -57,13 +58,16 @@ public class WallapopItem
     [JsonPropertyName("discount")]
     public DiscountW? Discount { get; set; }
 
-    public List<Taxonomy> Taxonomy { get; set; }
+    [JsonPropertyName("previous_price")]
+    public PreviousPrice? PreviousPrice { get; set; }
+
+    public List<Taxonomy>? Taxonomy { get; set; }
 
     [JsonPropertyName("is_favoriteable")]
-    public IsFavoriteable IsFavoriteable { get; set; }
+    public IsFavoriteable? IsFavoriteable { get; set; }
 
     [JsonPropertyName("is_refurbished")]
-    public IsRefurbished IsRefurbished { get; set; }
+    public IsRefurbished? IsRefurbished { get; set; }
 }
 
 public class PriceW
@@ -131,7 +135,7 @@ public class Bump
 public class DiscountW
 {
     [JsonPropertyName("previous_price")]
-    public PreviousPrice PreviousPrice { get; set; }
+    public PreviousPrice? PreviousPrice { get; set; }
 
     public int Percentage { get; set; }
 }

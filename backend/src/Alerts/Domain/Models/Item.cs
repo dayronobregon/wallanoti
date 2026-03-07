@@ -9,7 +9,7 @@ public sealed class Item
     public required string Title { get; set; }
     public string Description { get; set; }
     public int CategoryId { get; set; }
-    public required Price Price { get; set; }
+    public Price? Price { get; set; }
     public List<string>? Images { get; set; }
     public bool Reserved { get; set; }
     public Location Location { get; set; }

@@ -1,8 +1,10 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Configuration;
 using Wallanoti.Src.Alerts.Domain;
 using Wallanoti.Src.Alerts.Domain.Models;
+using Wallanoti.Src.Notifications.Domain;
 using Wallanoti.Src.Shared.Domain.Events;
 
 namespace Wallanoti.Src.Alerts.Application.SearchNewItems;
@@ -12,16 +14,24 @@ public sealed class ItemSearcher
     private readonly IEventBus _eventBus;
     private readonly IAlertRepository _alertRepository;
     private readonly IWallapopRepository _wallapopRepository;
+    private readonly IPushNotificationSender _pushNotificationSender;
+    private readonly long? _ownerChatId;
     private readonly IDistributedCache _cache;
 
     public ItemSearcher(
         IEventBus eventBus, IAlertRepository alertRepository,
         IWallapopRepository wallapopRepository,
+        IPushNotificationSender pushNotificationSender,
+        IConfiguration configuration,
         IDistributedCache cache)
     {
         _eventBus = eventBus;
         _alertRepository = alertRepository;
         _wallapopRepository = wallapopRepository;
+        _pushNotificationSender = pushNotificationSender;
+        _ownerChatId = long.TryParse(configuration["Notifications:OwnerChatId"], out var ownerChatId)
+            ? ownerChatId
+            : null;
         _cache = cache;
     }
 
@@ -31,7 +41,23 @@ public sealed class ItemSearcher
 
         foreach (var alert in alerts)
         {
-            var wallapopItems = await _wallapopRepository.Latest(alert.Url);
+            List<Item>? wallapopItems;
+
+            try
+            {
+                wallapopItems = await _wallapopRepository.Latest(alert.Url);
+            }
+            catch (Exception exception)
+            {
+                if (_ownerChatId.HasValue)
+                {
+                    await _pushNotificationSender.Notify(
+                        _ownerChatId.Value,
+                        $"Wallanoti internal error\nSource: alerts.wallapop.latest\nError: {exception.GetType().Name}: {exception.Message}\nContext: alertId={alert.Id}; userId={alert.UserId}; url={alert.Url}");
+                }
+
+                continue;
+            }
 
             if (wallapopItems is null)
             {

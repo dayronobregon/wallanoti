@@ -1,11 +1,13 @@
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Moq;
 using Wallanoti.Src.Alerts.Application.SearchNewItems;
 using Wallanoti.Src.Alerts.Domain;
 using Wallanoti.Src.Alerts.Domain.Models;
+using Wallanoti.Src.Notifications.Domain;
 using Wallanoti.Src.Shared.Domain.Events;
 using Wallanoti.Src.Shared.Domain.ValueObjects;
 
@@ -15,6 +17,7 @@ public class ItemSearcherTest
 {
     private readonly Mock<IAlertRepository> _alertRepositoryMock = new();
     private readonly Mock<IWallapopRepository> _wallapopRepositoryMock = new();
+    private readonly Mock<IPushNotificationSender> _pushNotificationSenderMock = new();
     private readonly IDistributedCache _cache;
     private readonly Mock<IEventBus> _eventBusMock = new();
     private readonly ItemSearcher _sut;
@@ -25,11 +28,22 @@ public class ItemSearcherTest
             .Returns(Task.CompletedTask);
         _alertRepositoryMock.Setup(x => x.Update(It.IsAny<Alert>()))
             .Returns(Task.CompletedTask);
+        _pushNotificationSenderMock.Setup(x => x.Notify(It.IsAny<long>(), It.IsAny<string>()))
+            .Returns(Task.CompletedTask);
         _cache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Notifications:OwnerChatId"] = "999"
+            })
+            .Build();
+
         _sut = new ItemSearcher(
             _eventBusMock.Object,
             _alertRepositoryMock.Object,
             _wallapopRepositoryMock.Object,
+            _pushNotificationSenderMock.Object,
+            configuration,
             _cache);
     }
 
@@ -97,6 +111,25 @@ public class ItemSearcherTest
         _eventBusMock.Verify(x => x.Publish(It.IsAny<List<DomainEvent>>()), Times.Never);
         _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Never);
         Assert.NotNull(_cache.GetString(alert.GetCacheKey()));
+    }
+
+    [Fact]
+    public async Task Execute_WhenWallapopRepositoryThrows_NotifiesOwnerThroughPushSender()
+    {
+        var alert = BuildAlert(DateTime.UtcNow.AddMinutes(-30), DateTime.UtcNow.AddMinutes(-20));
+
+        _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
+        _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ThrowsAsync(new InvalidOperationException("boom"));
+
+        await _sut.Execute();
+
+        _pushNotificationSenderMock.Verify(x => x.Notify(
+                999,
+                It.Is<string>(message =>
+                    message.Contains("alerts.wallapop.latest") &&
+                    message.Contains("InvalidOperationException: boom") &&
+                    message.Contains(alert.Id.ToString()))),
+            Times.Once);
     }
 
     private static Alert BuildAlert(DateTime createdAt, DateTime? updatedAt = null, bool isActive = true)
