@@ -33,8 +33,10 @@ jobs:
       with:
         dotnet-version: 8.0.x
     - name: Restore dependencies
+      working-directory: backend
       run: dotnet restore
     - name: Build
+      working-directory: backend
       run: dotnet build --no-restore
     - name: Test
       working-directory: backend
