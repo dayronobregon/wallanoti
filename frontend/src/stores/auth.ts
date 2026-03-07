@@ -94,7 +94,7 @@ export const useAuthStore = defineStore('auth', () => {
             try {
                 if (verificationCode.length === 0) return false
 
-                let result = await useApiClient().auth.postAuthVerify({
+                const result = await useApiClient().auth.postAuthVerify({
                     userName,
                     verificationCode,
                 });
