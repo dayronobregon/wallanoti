@@ -1,5 +1,4 @@
 using Wallanoti.Api.Telegram.Configurations;
-using Wallanoti.Api.Telegram.Conversation;
 using Wallanoti.Api.Telegram.Handlers;
 using Wallanoti.Api.Telegram.Handlers.MessageResolver;
 using Wallanoti.Src.Alerts.Application.SearchNewItems;
@@ -16,7 +15,7 @@ public static class Application
 
         services.AddScoped<ItemSearcher>();
         services.AddScoped<TelegramBotConnection>();
-        services.AddScoped<ITelegramBotConnection>(sp => sp.GetRequiredService<TelegramBotConnection>());
+        services.AddScoped<ITelegramBotConnection>(provider => provider.GetRequiredService<TelegramBotConnection>());
         services.AddScoped<TelegramBot>();
         services.AddScoped<OnMessageHandlerFactory>();
         services.AddScoped<OnUpdateHandlerFactory>();
