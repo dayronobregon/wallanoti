@@ -5,7 +5,7 @@ public record NotificationResponse(
     string Title,
     string Description,
     string Location,
-    double CurrentPrice,
+    double? CurrentPrice,
     double? PreviousPrice,
     string Url,
     DateTime CreatedAt,
