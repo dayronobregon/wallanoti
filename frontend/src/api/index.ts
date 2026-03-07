@@ -14,8 +14,8 @@ export type { AlertCounter } from './models/AlertCounter';
 export type { GetAlertsByUserIdResponse } from './models/GetAlertsByUserIdResponse';
 export type { NotificationResponse } from './models/NotificationResponse';
 export type { ProblemDetails } from './models/ProblemDetails';
-export type { User } from './models/User';
-export type { VerificationCode } from './models/VerificationCode';
+export type { UserDetailsResponse } from './models/UserDetailsResponse';
+export type { VerifyRequest } from './models/VerifyRequest';
 
 export { AlertService } from './services/AlertService';
 export { AuthService } from './services/AuthService';

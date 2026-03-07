@@ -1,7 +1,10 @@
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 using Coravel;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.RateLimiting;
 using Wallanoti.Api;
 using Wallanoti.Api.Extension.DependencyInjection;
 using Wallanoti.Api.Middlewares.Auth;
@@ -101,17 +104,45 @@ builder.Services.AddCors(options =>
     });
 });
 
-//TODO configurar rate limiter
-// builder.Services.AddRateLimiter(options =>
-// {
-//     options.AddFixedWindowLimiter("authRateLimiter", opt =>
-//     {
-//         opt.PermitLimit = 5;
-//         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-//         opt.QueueLimit = 2;
-//         opt.Window = TimeSpan.FromSeconds(1);
-//     });
-// });
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.OnRejected = (context, cancellationToken) =>
+    {
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            context.HttpContext.Response.Headers["Retry-After"] =
+                Math.Ceiling(retryAfter.TotalSeconds).ToString();
+        }
+
+        return new ValueTask(context.HttpContext.Response.WriteAsync(
+            "Too many requests. Try again later.",
+            cancellationToken));
+    };
+
+    options.AddPolicy("auth-login", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+
+    options.AddPolicy("auth-verify", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+});
 
 builder.Services.AddScoped<UserContext>();
 
@@ -127,6 +158,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseMiddleware<UserContextMiddleware>();

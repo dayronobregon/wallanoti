@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using Moq;
 using Wallanoti.Src.Shared.Domain;
 using Wallanoti.Src.Users.Application.Details;
@@ -15,12 +14,11 @@ public class GetUserDetailsQueryHandlerTest
 
     public GetUserDetailsQueryHandlerTest()
     {
-        _sut = new GetUserDetailsQueryHandler(new Mock<IHttpContextAccessor>().Object, _userRepositoryMock.Object,
-            _userContext);
+        _sut = new GetUserDetailsQueryHandler(_userRepositoryMock.Object, _userContext);
     }
 
     [Fact]
-    public async Task Handle_WhenUserIsAuthenticated_ReturnsUser()
+    public async Task Handle_WhenUserIsAuthenticated_ReturnsUserDetailsResponse()
     {
         var user = new User(1, "username");
         _userContext.SetUser("token", user.Id, user.UserName);
@@ -28,7 +26,8 @@ public class GetUserDetailsQueryHandlerTest
 
         var result = await _sut.Handle(new GetUserDetailsQuery(), CancellationToken.None);
 
-        Assert.Equal(user, result);
+        Assert.Equal(user.Id, result.Id);
+        Assert.Equal(user.UserName, result.UserName);
     }
 
     [Fact]

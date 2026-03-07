@@ -23,7 +23,7 @@ public class IncrementOnNewItemsFoundTest
     {
         var alertId = Guid.NewGuid();
         var items = new List<Item> { BuildItem("1"), BuildItem("2") };
-        var @event = new NewItemsFoundEvent(alertId.ToString(), DateTime.UtcNow.ToString(), 10, items);
+        var @event = new NewItemsFoundEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString(), alertId, 10, items);
 
         _repositoryMock.Setup(x => x.SearchByAlertId(alertId)).ReturnsAsync((Src.AlertCounter.Domain.AlertCounter?)null);
 
@@ -37,7 +37,7 @@ public class IncrementOnNewItemsFoundTest
     public async Task Handle_WhenItemsAreNullOrEmpty_DoesNotPersist()
     {
         var alertId = Guid.NewGuid();
-        var @event = new NewItemsFoundEvent(alertId.ToString(), DateTime.UtcNow.ToString(), 1, null);
+        var @event = new NewItemsFoundEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString(), alertId, 1, null);
 
         _repositoryMock.Setup(x => x.SearchByAlertId(alertId)).ReturnsAsync((Src.AlertCounter.Domain.AlertCounter?)null);
 
@@ -53,7 +53,7 @@ public class IncrementOnNewItemsFoundTest
         var existing = Src.AlertCounter.Domain.AlertCounter.New(Guid.NewGuid(), alertId);
         existing.Increment(1);
         var items = new List<Item> { BuildItem("new-item") };
-        var @event = new NewItemsFoundEvent(alertId.ToString(), DateTime.UtcNow.ToString(), 99, items);
+        var @event = new NewItemsFoundEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString(), alertId, 99, items);
 
         _repositoryMock.Setup(x => x.SearchByAlertId(alertId)).ReturnsAsync(existing);
 

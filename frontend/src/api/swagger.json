@@ -439,29 +439,30 @@
         }
       }
     },
-    "/Auth/verify/{userName}/{code}": {
-      "get": {
+    "/Auth/verify": {
+      "post": {
         "tags": [
           "Auth"
         ],
-        "parameters": [
-          {
-            "name": "userName",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyRequest"
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -558,17 +559,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/User"
+                  "$ref": "#/components/schemas/UserDetailsResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/User"
+                  "$ref": "#/components/schemas/UserDetailsResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/User"
+                  "$ref": "#/components/schemas/UserDetailsResponse"
                 }
               }
             }
@@ -696,7 +697,7 @@
 
         }
       },
-      "User": {
+      "UserDetailsResponse": {
         "type": "object",
         "properties": {
           "id": {
@@ -708,17 +709,18 @@
             "type": "string",
             "nullable": true,
             "readOnly": true
-          },
-          "verificationCode": {
-            "$ref": "#/components/schemas/VerificationCode"
           }
         },
         "additionalProperties": false
       },
-      "VerificationCode": {
+      "VerifyRequest": {
         "type": "object",
         "properties": {
-          "value": {
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "code": {
             "type": "string",
             "nullable": true
           }

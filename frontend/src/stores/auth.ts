@@ -1,12 +1,12 @@
 import {defineStore} from 'pinia'
-import {ref, computed, onBeforeMount} from 'vue'
-import type {User} from '@/api'
+import {ref, computed} from 'vue'
+import type {UserDetailsResponse} from '@/api'
 import {useApiClient, useAuthenticatedApiClient} from "@/composables/useApiClient.ts";
 
 export const useAuthStore = defineStore('auth', () => {
         const bearerToken = ref<string | null>(null)
         const needsSignup = ref(false)
-        const user = ref<User | null>(null)
+        const user = ref<UserDetailsResponse | null>(null)
         const waitingForVerificationCode = ref(false)
         const userName = ref<string | null>(null)
 
@@ -60,7 +60,10 @@ export const useAuthStore = defineStore('auth', () => {
             try {
                 if (verificationCode.length === 0) return false
 
-                let result = await useApiClient().auth.getAuthVerify(userName, verificationCode);
+                let result = await useApiClient().auth.postAuthVerify({
+                    userName,
+                    code: verificationCode,
+                });
 
                 if (result === undefined) {
                     return false;

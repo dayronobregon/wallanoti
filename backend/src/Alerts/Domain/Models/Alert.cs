@@ -53,7 +53,8 @@ public sealed class Alert : AggregateRoot
     {
         if (wallapopItems is not null && wallapopItems.Count > 0)
         {
-            Record(new NewItemsFoundEvent(Id.ToString(), TimeProvider.System.GetUtcNow().ToString(), UserId,
+            Record(new NewItemsFoundEvent(Guid.NewGuid().ToString(), TimeProvider.System.GetUtcNow().ToString(), Id,
+                UserId,
                 wallapopItems));
         }
     }

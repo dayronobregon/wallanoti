@@ -72,7 +72,7 @@ public class ItemSearcherTest
     }
 
     [Fact]
-    public async Task Execute_WhenNoNewItems_DoesNotPublishOrCache()
+    public async Task Execute_WhenNoNewItems_DoesNotPublishOrCache_ButTouchesAlert()
     {
         var now = DateTime.UtcNow;
         var alert = BuildAlert(now, now);
@@ -87,7 +87,7 @@ public class ItemSearcherTest
         await _sut.Execute();
 
         _eventBusMock.Verify(x => x.Publish(It.IsAny<List<DomainEvent>>()), Times.Never);
-        _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Never);
+        _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Once);
         Assert.Null(_cache.GetString(alert.GetCacheKey()));
     }
 
@@ -109,7 +109,7 @@ public class ItemSearcherTest
         await _sut.Execute();
 
         _eventBusMock.Verify(x => x.Publish(It.IsAny<List<DomainEvent>>()), Times.Never);
-        _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Never);
+        _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Once);
         Assert.NotNull(_cache.GetString(alert.GetCacheKey()));
     }
 

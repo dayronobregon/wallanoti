@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Wallanoti.Src.Users.Application.Login;
 
@@ -19,6 +20,7 @@ public class AuthController : ControllerBase
 
     [HttpGet]
     [Route("login/{userName}")]
+    [EnableRateLimiting("auth-login")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<ActionResult<string>> Login(string userName)
@@ -37,13 +39,14 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet]
-    [Route("verify/{userName}/{code}")]
+    [HttpPost]
+    [Route("verify")]
+    [EnableRateLimiting("auth-verify")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<ActionResult<string>> Verify(string userName, string code)
+    public async Task<ActionResult<string>> Verify([FromBody] VerifyRequest request)
     {
-        var result = await _mediator.Send(new VerifyUserRequest(userName, code));
+        var result = await _mediator.Send(new VerifyUserRequest(request.UserName, request.Code));
 
         if (result is null)
         {
@@ -53,3 +56,5 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 }
+
+public sealed record VerifyRequest(string UserName, string Code);

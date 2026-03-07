@@ -2,10 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { VerificationCode } from './VerificationCode';
-export type User = {
+export type UserDetailsResponse = {
     readonly id?: number;
     readonly userName?: string | null;
-    verificationCode?: VerificationCode;
 };
 

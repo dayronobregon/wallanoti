@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wallanoti.Src.Users.Application.Details;
-using Wallanoti.Src.Users.Domain.Models;
 
 namespace Wallanoti.Api.Controllers;
 
@@ -19,7 +18,7 @@ public sealed class UserController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<User> Index()
+    public async Task<UserDetailsResponse> Index()
     {
         var result = await _mediator.Send(new GetUserDetailsQuery());
 
