@@ -60,9 +60,9 @@ public class AuthController : ControllerBase
 }
 
 public sealed record LoginRequest(
-    [property: Required, StringLength(64, MinimumLength = 3)] string UserName);
+    [Required, StringLength(64, MinimumLength = 3)] string UserName);
 
 public sealed record VerifyRequest(
-    [property: Required, StringLength(64, MinimumLength = 3)] string UserName,
-    [property: Required, StringLength(6, MinimumLength = 6), RegularExpression("^\\d{6}$")]
+    [Required, StringLength(64, MinimumLength = 3)] string UserName,
+    [Required, StringLength(6, MinimumLength = 6), RegularExpression("^\\d{6}$")]
     string VerificationCode);
