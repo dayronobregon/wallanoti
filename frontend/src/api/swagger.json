@@ -724,6 +724,10 @@
       },
       "UserDetailsResponse": {
         "type": "object",
+        "required": [
+          "id",
+          "userName"
+        ],
         "properties": {
           "id": {
             "type": "integer",
@@ -732,7 +736,6 @@
           },
           "userName": {
             "type": "string",
-            "nullable": true,
             "readOnly": true
           }
         },

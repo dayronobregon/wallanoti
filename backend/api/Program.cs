@@ -73,10 +73,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
     foreach (var network in builder.Configuration.GetSection("ForwardedHeaders:KnownNetworks").Get<string[]>() ?? [])
     {
-        var parsedNetwork = TryParseNetwork(network);
-        if (parsedNetwork is { } trustedNetwork)
+        var parsedNetwork = ForwardedHeadersNetworkParser.TryParseNetwork(network);
+        if (parsedNetwork != null)
         {
-            options.KnownNetworks.Add(trustedNetwork);
+            options.KnownNetworks.Add(parsedNetwork);
         }
     }
 });
@@ -172,22 +172,6 @@ builder.Services.AddScoped<UserContext>();
 static string ResolveClientIp(HttpContext httpContext)
 {
     return httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-}
-
-static Microsoft.AspNetCore.HttpOverrides.IPNetwork? TryParseNetwork(string cidr)
-{
-    var parts = cidr.Split('/');
-    if (parts.Length != 2)
-    {
-        return null;
-    }
-
-    if (!IPAddress.TryParse(parts[0], out var prefix) || !int.TryParse(parts[1], out var prefixLength))
-    {
-        return null;
-    }
-
-    return new Microsoft.AspNetCore.HttpOverrides.IPNetwork(prefix, prefixLength);
 }
 
 var app = builder.Build();

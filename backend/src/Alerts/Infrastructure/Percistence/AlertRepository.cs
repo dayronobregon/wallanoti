@@ -24,7 +24,7 @@ public sealed class AlertRepository : IAlertRepository
     {
         return await _context.Alerts
             .AsNoTracking()
-            .Where(x => x.IsActive == true)
+            .Where(x => x.IsActive)
             .ToListAsync();
     }
 
@@ -40,6 +40,15 @@ public sealed class AlertRepository : IAlertRepository
             .Where(x => x.Id == alertId)
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(alert => alert.UpdatedAt, touchedAt));
+    }
+
+    public async Task<int> UpdateLastSearchedAt(Guid alertId, DateTime lastSearchedAt)
+    {
+        return await _context.Alerts
+            .Where(x => x.Id == alertId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(alert => alert.LastSearchedAt, lastSearchedAt)
+                .SetProperty(alert => alert.UpdatedAt, lastSearchedAt));
     }
 
     public async Task<IEnumerable<Alert>> GetByUserId(long userId)

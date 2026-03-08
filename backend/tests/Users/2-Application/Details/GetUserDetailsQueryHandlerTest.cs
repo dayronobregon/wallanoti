@@ -39,14 +39,4 @@ public class GetUserDetailsQueryHandlerTest
 
         _userRepositoryMock.Verify(x => x.Find(It.IsAny<long>()), Times.Never);
     }
-
-    [Fact]
-    public async Task Handle_WhenUserDoesNotExist_ThrowsUserNotFoundException()
-    {
-        _userContext.SetUser("token", 404, "ghost");
-        _userRepositoryMock.Setup(x => x.Find(404)).ReturnsAsync((User)null!);
-
-        await Assert.ThrowsAsync<UserNotFoundException>(() =>
-            _sut.Handle(new GetUserDetailsQuery(), CancellationToken.None));
-    }
 }

@@ -157,5 +157,5 @@ enabled = true
 
 [mcp_servers.magic-patterns]
 command = "npx"
-args = ["-y", "mcp-remote", "https://mcp.magicpatterns.com/mcp"]
+args = ["-y", "mcp-remote@0.1.38", "https://mcp.magicpatterns.com/mcp"]
 enabled = true

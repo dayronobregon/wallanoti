@@ -76,9 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
                 }) as string | undefined;
 
                 if (result === undefined) {
-                    logout()
-                    needsSignup.value = true
-                    authError.value = null
+                    resetForSignup()
                     return
                 }
 
@@ -114,11 +112,20 @@ export const useAuthStore = defineStore('auth', () => {
             return bearerToken.value != null
         }
 
+        function resetForSignup() {
+            bearerToken.value = null
+            needsSignup.value = true
+            user.value = null
+            waitingForVerificationCode.value = false
+            authError.value = null
+        }
+
 
         function logout() {
             bearerToken.value = null
             needsSignup.value = false
             user.value = null
+            userName.value = null
             waitingForVerificationCode.value = false
             authError.value = null
         }
@@ -133,6 +140,7 @@ export const useAuthStore = defineStore('auth', () => {
             isAuthenticated,
             getUser,
             logout,
+            resetForSignup,
             login,
             verify
         }

@@ -10,6 +10,7 @@ public sealed class OnMessageHandlerFactory
     private readonly ListTelegramMessageResolver _listTelegramMessageResolver;
     private readonly AlertUrlTelegramMessageResolver _alertUrlTelegramMessageResolver;
     private readonly CancelTelegramMessageResolver _cancelTelegramMessageResolver;
+    private readonly UnknownTelegramMessageResolver _unknownTelegramMessageResolver;
     private readonly ITelegramConversationRepository _conversationRepository;
 
     public OnMessageHandlerFactory(
@@ -18,6 +19,7 @@ public sealed class OnMessageHandlerFactory
         ListTelegramMessageResolver listTelegramMessageResolver,
         AlertUrlTelegramMessageResolver alertUrlTelegramMessageResolver,
         CancelTelegramMessageResolver cancelTelegramMessageResolver,
+        UnknownTelegramMessageResolver unknownTelegramMessageResolver,
         ITelegramConversationRepository conversationRepository)
     {
         _startTelegramMessageResolver = startTelegramMessageResolver;
@@ -25,6 +27,7 @@ public sealed class OnMessageHandlerFactory
         _listTelegramMessageResolver = listTelegramMessageResolver;
         _alertUrlTelegramMessageResolver = alertUrlTelegramMessageResolver;
         _cancelTelegramMessageResolver = cancelTelegramMessageResolver;
+        _unknownTelegramMessageResolver = unknownTelegramMessageResolver;
         _conversationRepository = conversationRepository;
     }
 
@@ -62,15 +65,16 @@ public sealed class OnMessageHandlerFactory
             if (state == ConversationState.AwaitingUrl)
                 return _alertUrlTelegramMessageResolver;
 
-            return _startTelegramMessageResolver;
+            return _unknownTelegramMessageResolver;
         }
 
         // Command routing
         return commandToken switch
         {
+            StartTelegramMessageResolver.Command => _startTelegramMessageResolver,
             NewAlertTelegramMessageResolver.Command => _newAlertTelegramMessageResolver,
             ListTelegramMessageResolver.Command => _listTelegramMessageResolver,
-            _ => _startTelegramMessageResolver
+            _ => _unknownTelegramMessageResolver
         };
     }
 }

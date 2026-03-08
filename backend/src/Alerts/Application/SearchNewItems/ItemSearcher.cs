@@ -66,18 +66,18 @@ public sealed class ItemSearcher
 
             var cachedItems = GetCachedItems(alert.GetCacheKey());
 
+            var referenceDate = alert.LastSearchedAt ?? alert.CreatedAt;
+            
             var newItems = (from item in wallapopItems
                 let createdAt = DateTimeOffset.FromUnixTimeMilliseconds(item.CreatedAt).DateTime
-                let modifiedAt = DateTimeOffset.FromUnixTimeMilliseconds(item.ModifiedAt).DateTime
-                let dateToCompare = alert.UpdatedAt ?? alert.CreatedAt
-                where (createdAt.CompareTo(dateToCompare) >= 0 || modifiedAt.CompareTo(dateToCompare) >= 0) &&
+                where createdAt.CompareTo(referenceDate) >= 0 &&
                       !AlreadyFound(cachedItems, item.Id)
                 select item).ToList();
 
             if (newItems.Count == 0)
             {
-                alert.Touch();
-                await _alertRepository.TouchAlert(alert.Id, alert.UpdatedAt!.Value);
+                alert.RecordSearch();
+                await _alertRepository.UpdateLastSearchedAt(alert.Id, alert.LastSearchedAt!.Value);
                 continue;
             }
 

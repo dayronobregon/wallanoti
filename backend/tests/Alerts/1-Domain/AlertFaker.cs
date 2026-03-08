@@ -14,5 +14,6 @@ public sealed class AlertFaker : Faker<Alert>
         RuleFor(x => x.Url, f => Url.Create(f.Internet.UrlWithPath("https", "es.wallapop.com")));
         RuleFor(x => x.CreatedAt, f => f.Date.Past());
         RuleFor(x => x.UpdatedAt, f => f.Date.Past());
+        RuleFor(x => x.LastSearchedAt, f => f.Date.Past());
     }
 }
