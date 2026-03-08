@@ -30,7 +30,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="appsettings.Test.json">
+        <Content Include="appsettings.Test.example.json">
+            <TargetPath>appsettings.Test.json</TargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
             <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
