@@ -103,7 +103,10 @@ backend/*.DotSettings.user
 .github/agents/skills
 .github/copilot-instructions.md
 .mcp.json
+.opencode/command
+.opencode/skills
 .vscode/mcp.json
 AGENTS.md
 CLAUDE.md
+opencode.json
 # END AI Agent Symlinks
