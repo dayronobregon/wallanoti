@@ -79,8 +79,11 @@ backend/*.suo
 backend/*.userosscache
 backend/.idea/
 backend/*.log
-backend/appsettings.Development.json
-backend/appsettings.*.json
+backend/api/appsettings.*.json
+!backend/api/appsettings.json
+!backend/api/appsettings.*.example.json
+backend/tests/appsettings.*.json
+!backend/tests/appsettings.*.example.json
 backend/*.db
 backend/*.db-shm
 backend/*.db-wal
