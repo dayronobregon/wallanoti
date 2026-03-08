@@ -25,13 +25,14 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("auth-login")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<ActionResult<string>> Login([FromBody] LoginRequest request)
+    public async Task<ActionResult<string>> Login([FromBody] LoginRequest request,
+        CancellationToken cancellationToken)
     {
         _logger.LogInformation("Login requested at {Time}", DateTime.UtcNow);
 
         var loginRequest = new LoginUserRequest(request.UserName);
 
-        var result = await _mediator.Send(loginRequest);
+        var result = await _mediator.Send(loginRequest, cancellationToken);
 
         if (result is null)
         {
@@ -46,9 +47,11 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("auth-verify")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<ActionResult<string>> Verify([FromBody, Required] VerifyRequest request)
+    public async Task<ActionResult<string>> Verify([FromBody, Required] VerifyRequest request,
+        CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new VerifyUserRequest(request.UserName, request.VerificationCode));
+        var result = await _mediator.Send(new VerifyUserRequest(request.UserName, request.VerificationCode),
+            cancellationToken);
 
         if (result is null)
         {
