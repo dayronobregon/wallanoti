@@ -11,6 +11,7 @@ public sealed class Alert : AggregateRoot
     public Url Url { get; }
     public DateTime CreatedAt { get; }
     public DateTime? UpdatedAt { get; set; }
+    public DateTime? LastSearchedAt { get; set; }
     public bool IsActive { get; private set; }
 
     public Alert()
@@ -29,7 +30,7 @@ public sealed class Alert : AggregateRoot
     }
 
     public Alert(Guid id, long userId, string name, string url, DateTime createdAt, DateTime? updatedAt,
-        bool isActive = true)
+        bool isActive = true, DateTime? lastSearchedAt = null)
     {
         Id = id;
         UserId = userId;
@@ -38,6 +39,7 @@ public sealed class Alert : AggregateRoot
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
         IsActive = isActive;
+        LastSearchedAt = lastSearchedAt;
     }
 
     public static Alert Create(long userId, string name, string url)
@@ -53,12 +55,21 @@ public sealed class Alert : AggregateRoot
     {
         if (wallapopItems is not null && wallapopItems.Count > 0)
         {
-            Record(new NewItemsFoundEvent(Id.ToString(), TimeProvider.System.GetUtcNow().ToString(), UserId,
+            Record(new NewItemsFoundEvent(Guid.NewGuid().ToString(), TimeProvider.System.GetUtcNow().ToString("o"), Id,
+                UserId,
                 wallapopItems));
+            
+            RecordSearch();
         }
     }
 
-    public void Touch()
+    public void RecordSearch()
+    {
+        LastSearchedAt = TimeProvider.System.GetUtcNow().UtcDateTime;
+        UpdatedAt = LastSearchedAt.Value;
+    }
+
+    private void Touch()
     {
         UpdatedAt = TimeProvider.System.GetUtcNow().UtcDateTime;
     }

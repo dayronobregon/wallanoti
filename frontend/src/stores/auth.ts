@@ -1,14 +1,16 @@
+import {ref, computed} from 'vue'
 import {defineStore} from 'pinia'
-import {ref, computed, onBeforeMount} from 'vue'
-import type {User} from '@/api'
+import type {UserDetailsResponse} from '@/api'
 import {useApiClient, useAuthenticatedApiClient} from "@/composables/useApiClient.ts";
+import {ApiError} from '@/api/core/ApiError'
 
 export const useAuthStore = defineStore('auth', () => {
         const bearerToken = ref<string | null>(null)
         const needsSignup = ref(false)
-        const user = ref<User | null>(null)
+        const user = ref<UserDetailsResponse | null>(null)
         const waitingForVerificationCode = ref(false)
         const userName = ref<string | null>(null)
+        const authError = ref<string | null>(null)
 
         const isAuthenticated = computed(() => bearerToken.value !== null)
 
@@ -17,25 +19,51 @@ export const useAuthStore = defineStore('auth', () => {
             bearerToken.value = null
             needsSignup.value = false
             user.value = null
+            authError.value = null
         }
 
         function verified(token: string) {
             bearerToken.value = token
             needsSignup.value = false
             waitingForVerificationCode.value = false
+            authError.value = null
+        }
+
+        function resolveUserFriendlyAuthError(err: unknown, fallback: string): string {
+            if (err instanceof ApiError && err.status === 429) {
+                return 'Demasiados intentos. Espera un momento e intentalo de nuevo.'
+            }
+
+            if (err instanceof ApiError) {
+                return `${fallback} (HTTP ${err.status})`
+            }
+
+            if (err instanceof Error) {
+                return `${fallback} (${err.message})`
+            }
+
+            return fallback
         }
 
         async function getUser() {
             try {
-                let userResponse = await useAuthenticatedApiClient().user.getUser();
-                console.log("userResponse:", userResponse)
-                if (user === undefined) {
+                const userResponse = await useAuthenticatedApiClient().user.getUser();
+                if (userResponse === undefined || userResponse === null) {
+                    logout()
                     return
                 }
                 user.value = userResponse
+                authError.value = null
 
             } catch (err) {
                 console.error(err)
+                if (err instanceof ApiError && [401, 403, 404].includes(err.status)) {
+                    logout()
+                    authError.value = 'Tu sesion expiro. Vuelve a iniciar sesion.'
+                    return
+                }
+
+                authError.value = 'No pudimos cargar tu sesion. Intenta de nuevo.'
             }
         }
 
@@ -43,16 +71,20 @@ export const useAuthStore = defineStore('auth', () => {
             try {
                 if (userName.value == null || userName.value?.length === 0) return
 
-                let result = await useApiClient().auth.getAuthLogin(userName.value);
+                const result = await useApiClient().auth.postAuthLogin({
+                    userName: userName.value,
+                }) as string | undefined;
 
                 if (result === undefined) {
-                    needsSignup.value = true
+                    resetForSignup()
                     return
                 }
 
                 waitForVerificationCode()
             } catch (err) {
                 console.error(err)
+                authError.value = resolveUserFriendlyAuthError(err, 'No pudimos enviar el codigo de verificacion')
+                alert(authError.value)
             }
         }
 
@@ -60,20 +92,32 @@ export const useAuthStore = defineStore('auth', () => {
             try {
                 if (verificationCode.length === 0) return false
 
-                let result = await useApiClient().auth.getAuthVerify(userName, verificationCode);
+                const result = await useApiClient().auth.postAuthVerify({
+                    userName,
+                    verificationCode,
+                }) as string | undefined;
 
                 if (result === undefined) {
                     return false;
                 }
 
-                console.log("Verified, token:", result)
                 verified(result)
                 await getUser()
             } catch (err) {
                 console.error(err)
+                authError.value = resolveUserFriendlyAuthError(err, 'No pudimos verificar el codigo')
+                alert(authError.value)
             }
 
             return bearerToken.value != null
+        }
+
+        function resetForSignup() {
+            bearerToken.value = null
+            needsSignup.value = true
+            user.value = null
+            waitingForVerificationCode.value = false
+            authError.value = null
         }
 
 
@@ -81,7 +125,9 @@ export const useAuthStore = defineStore('auth', () => {
             bearerToken.value = null
             needsSignup.value = false
             user.value = null
+            userName.value = null
             waitingForVerificationCode.value = false
+            authError.value = null
         }
 
         return {
@@ -89,15 +135,19 @@ export const useAuthStore = defineStore('auth', () => {
             waitingForVerificationCode,
             user,
             userName,
+            authError,
             bearerToken,
             isAuthenticated,
             getUser,
             logout,
+            resetForSignup,
             login,
             verify
         }
     },
     {
-        persist: true,
+        persist: {
+            omit: ['authError'],
+        },
     },
 )

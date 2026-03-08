@@ -3,7 +3,7 @@
 # 
 # Source directory (relative to this config file)
 source_dir = "."
-
+default_agents = ["copilot", "opencode"]
 # Optional: compress AGENTS.md and point symlinks to the compressed file
 # compress_agents_md = false
 
@@ -45,6 +45,25 @@ marker = "AI Agent Symlinks"
 #   - destination: Path relative to project root
 #   - type: "symlink" or "symlink-contents"
 #   - pattern: (optional) Glob pattern for symlink-contents
+
+# -----------------------------------------------------------------------------
+# OpenCode AI - Terminal-based AI coding assistant
+# -----------------------------------------------------------------------------
+[agents.opencode]
+enabled = true
+description = "OpenCode - Open source AI coding agent"
+
+[agents.opencode.targets.skills]
+source = "skills"
+destination = ".opencode/skills"
+type = "symlink-contents"
+pattern = "*"
+
+[agents.opencode.targets.commands]
+source = "command"
+destination = ".opencode/command"
+type = "symlink-contents"
+pattern = "*"
 
 # -----------------------------------------------------------------------------
 # Claude Code
@@ -131,8 +150,12 @@ merge_strategy = "merge"
 command = "npx"
 args = ["-y", "@modelcontextprotocol/server-filesystem", "."]
 
-[mcp_servers.git]
-command = "npx"
-args = ["-y", "@modelcontextprotocol/server-git", "--repository", "."]
-env = { "DEBUG" = "true" }
+[mcp_servers.context7]
+type = "remote"
+url = "https://mcp.context7.com/mcp"
+enabled = true
 
+[mcp_servers.magic-patterns]
+command = "npx"
+args = ["-y", "mcp-remote@0.1.38", "https://mcp.magicpatterns.com/mcp"]
+enabled = true

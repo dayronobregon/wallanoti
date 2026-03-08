@@ -397,21 +397,32 @@
         }
       }
     },
-    "/Auth/login/{userName}": {
-      "get": {
+    "/Auth/login": {
+      "post": {
         "tags": [
           "Auth"
         ],
-        "parameters": [
-          {
-            "name": "userName",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -439,29 +450,32 @@
         }
       }
     },
-    "/Auth/verify/{userName}/{code}": {
-      "get": {
+    "/Auth/verify": {
+      "post": {
         "tags": [
           "Auth"
         ],
-        "parameters": [
-          {
-            "name": "userName",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyRequest"
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -558,17 +572,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/User"
+                  "$ref": "#/components/schemas/UserDetailsResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/User"
+                  "$ref": "#/components/schemas/UserDetailsResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/User"
+                  "$ref": "#/components/schemas/UserDetailsResponse"
                 }
               }
             }
@@ -617,6 +631,18 @@
           },
           "isActive": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LoginRequest": {
+        "required": [
+          "userName"
+        ],
+        "type": "object",
+        "properties": {
+          "userName": {
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -696,8 +722,12 @@
 
         }
       },
-      "User": {
+      "UserDetailsResponse": {
         "type": "object",
+        "required": [
+          "id",
+          "userName"
+        ],
         "properties": {
           "id": {
             "type": "integer",
@@ -706,21 +736,23 @@
           },
           "userName": {
             "type": "string",
-            "nullable": true,
             "readOnly": true
-          },
-          "verificationCode": {
-            "$ref": "#/components/schemas/VerificationCode"
           }
         },
         "additionalProperties": false
       },
-      "VerificationCode": {
+      "VerifyRequest": {
         "type": "object",
+        "required": [
+          "userName",
+          "verificationCode"
+        ],
         "properties": {
-          "value": {
-            "type": "string",
-            "nullable": true
+          "userName": {
+            "type": "string"
+          },
+          "verificationCode": {
+            "type": "string"
           }
         },
         "additionalProperties": false

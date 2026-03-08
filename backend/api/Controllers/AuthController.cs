@@ -1,4 +1,7 @@
+using System.ComponentModel.DataAnnotations;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Wallanoti.Src.Users.Application.Login;
 
@@ -17,17 +20,18 @@ public class AuthController : ControllerBase
         _mediator = mediator;
     }
 
-    [HttpGet]
-    [Route("login/{userName}")]
+    [AllowAnonymous]
+    [HttpPost("login")]
+    [EnableRateLimiting("auth-login")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<ActionResult<string>> Login(string userName)
+    public async Task<ActionResult<string>> Login([FromBody] LoginRequest request)
     {
-        _logger.LogInformation("User {UserName} logged in at {Time}", userName, DateTime.UtcNow);
+        _logger.LogInformation("Login requested at {Time}", DateTime.UtcNow);
 
-        var request = new LoginUserRequest(userName);
+        var loginRequest = new LoginUserRequest(request.UserName);
 
-        var result = await _mediator.Send(request);
+        var result = await _mediator.Send(loginRequest);
 
         if (result is null)
         {
@@ -37,13 +41,14 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet]
-    [Route("verify/{userName}/{code}")]
+    [AllowAnonymous]
+    [HttpPost("verify")]
+    [EnableRateLimiting("auth-verify")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<ActionResult<string>> Verify(string userName, string code)
+    public async Task<ActionResult<string>> Verify([FromBody, Required] VerifyRequest request)
     {
-        var result = await _mediator.Send(new VerifyUserRequest(userName, code));
+        var result = await _mediator.Send(new VerifyUserRequest(request.UserName, request.VerificationCode));
 
         if (result is null)
         {
@@ -53,3 +58,13 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 }
+
+public sealed record LoginRequest(
+    [Required, StringLength(64, MinimumLength = 3)]
+    string UserName);
+
+public sealed record VerifyRequest(
+    [Required, StringLength(64, MinimumLength = 3)]
+    string UserName,
+    [Required, StringLength(6, MinimumLength = 6), RegularExpression("^\\d{6}$")]
+    string VerificationCode);

@@ -5,6 +5,7 @@ namespace Wallanoti.Src.Alerts.Domain;
 
 public sealed class NewItemsFoundEvent : DomainEvent
 {
+    public Guid AlertId { get; init; }
     public long UserId { get; init; }
     public IEnumerable<Item>? Items { get; init; }
 
@@ -13,9 +14,10 @@ public sealed class NewItemsFoundEvent : DomainEvent
         
     }
     
-    public NewItemsFoundEvent(string eventId, string occurredOn, long userId, IEnumerable<Item>? items) : base(eventId,
-        occurredOn)
+    public NewItemsFoundEvent(string eventId, string occurredOn, Guid alertId, long userId, IEnumerable<Item>? items)
+        : base(eventId, occurredOn)
     {
+        AlertId = alertId;
         UserId = userId;
         Items = items;
     }

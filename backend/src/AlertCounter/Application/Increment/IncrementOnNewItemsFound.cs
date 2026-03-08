@@ -15,8 +15,7 @@ public sealed class IncrementOnNewItemsFound : IDomainEventHandler<NewItemsFound
 
     public async Task Handle(NewItemsFoundEvent @event)
     {
-        //TODO fix
-        var alertId = Guid.Parse(@event.EventId);
+        var alertId = @event.AlertId;
         var counter = await _repository.SearchByAlertId(alertId) ?? Domain.AlertCounter.New(Guid.NewGuid(), alertId);
 
         var count = @event.Items?.Count();

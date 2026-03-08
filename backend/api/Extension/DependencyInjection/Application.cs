@@ -25,6 +25,7 @@ public static class Application
         services.AddScoped<ListTelegramMessageResolver>();
         services.AddScoped<AlertUrlTelegramMessageResolver>();
         services.AddScoped<CancelTelegramMessageResolver>();
+        services.AddScoped<UnknownTelegramMessageResolver>();
         services.AddScoped<ITelegramConversationRepository, RedisTelegramConversationRepository>();
 
         return services;

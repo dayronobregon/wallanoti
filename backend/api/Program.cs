@@ -1,7 +1,12 @@
 using System.Security.Claims;
+using System.Net;
+using System.Threading.RateLimiting;
 using Coravel;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.RateLimiting;
 using Wallanoti.Api;
 using Wallanoti.Api.Extension.DependencyInjection;
 using Wallanoti.Api.Middlewares.Auth;
@@ -54,6 +59,27 @@ builder.Services.AddSchedulerTask();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+    foreach (var proxy in builder.Configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>() ?? [])
+    {
+        if (IPAddress.TryParse(proxy, out var ipAddress))
+        {
+            options.KnownProxies.Add(ipAddress);
+        }
+    }
+
+    foreach (var network in builder.Configuration.GetSection("ForwardedHeaders:KnownNetworks").Get<string[]>() ?? [])
+    {
+        var parsedNetwork = ForwardedHeadersNetworkParser.TryParseNetwork(network);
+        if (parsedNetwork != null)
+        {
+            options.KnownNetworks.Add(parsedNetwork);
+        }
+    }
+});
 builder.Services.AddSwaggerGen(o =>
 {
     var securityScheme = new Microsoft.OpenApi.Models.OpenApiSecurityScheme
@@ -101,19 +127,52 @@ builder.Services.AddCors(options =>
     });
 });
 
-//TODO configurar rate limiter
-// builder.Services.AddRateLimiter(options =>
-// {
-//     options.AddFixedWindowLimiter("authRateLimiter", opt =>
-//     {
-//         opt.PermitLimit = 5;
-//         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-//         opt.QueueLimit = 2;
-//         opt.Window = TimeSpan.FromSeconds(1);
-//     });
-// });
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.OnRejected = (context, cancellationToken) =>
+    {
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            context.HttpContext.Response.Headers["Retry-After"] =
+                Math.Ceiling(retryAfter.TotalSeconds).ToString();
+        }
+
+        return new ValueTask(context.HttpContext.Response.WriteAsync(
+            "Too many requests. Try again later.",
+            cancellationToken));
+    };
+
+    options.AddPolicy("auth-login", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ResolveClientIp(httpContext),
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+
+    options.AddPolicy("auth-verify", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ResolveClientIp(httpContext),
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+});
 
 builder.Services.AddScoped<UserContext>();
+
+static string ResolveClientIp(HttpContext httpContext)
+{
+    return httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+}
 
 var app = builder.Build();
 
@@ -124,9 +183,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseForwardedHeaders();
+
 app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseMiddleware<UserContextMiddleware>();
