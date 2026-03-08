@@ -26,11 +26,6 @@ public sealed class GetUserDetailsQueryHandler : IRequestHandler<GetUserDetailsQ
 
         var user = await _userRepository.Find(userId);
 
-        if (user is null)
-        {
-            throw new UserNotFoundException(userId);
-        }
-
         return new UserDetailsResponse(user.Id, user.UserName);
     }
 }
