@@ -58,61 +58,53 @@ El sistema está organizado en **Bounded Contexts** siguiendo DDD:
 ## 📦 **Puesta en marcha**
 
 ### Requisitos previos
-- .NET 8 SDK
+- .NET 8 SDK (si ejecutas backend local)
+- Node.js 20+ (si ejecutas frontend local)
 - Docker y Docker Compose
-- PostgreSQL (o usar Docker)
-- Redis (o usar Docker)
-- RabbitMQ (o usar Docker)
 
 ### 1. **Clona el repositorio:**
-   ```bash
-   git clone https://github.com/dayronobregon/wallanoti.git
-   cd wallanoti/backend
-   ```
-
-### 2. **Configura las variables de entorno:**
-Crea un archivo `.env` o configura en `appsettings.json`:
-
 ```bash
-# Telegram
-TelegramBotToken=your_telegram_bot_token
+git clone https://github.com/dayronobregon/wallanoti.git
+cd wallanoti
+```
 
-# Database
-ConnectionStrings__Postgres=Host=localhost;Database=wallanoti;Username=postgres;Password=yourpassword
-
-# Cache
-ConnectionStrings__Redis=localhost:6379
-
-# Message Broker
-RabbitMq__HostName=localhost
-RabbitMq__Port=5672
-RabbitMq__UserName=guest
-RabbitMq__Password=guest
-RabbitMq__VirtualHost=/
-
-# JWT
-Jwt__Secret=your_secret_key_here
-Jwt__Issuer=Wallanoti
-Jwt__Audience=WallanotiUsers
+### 2. **Configura las variables de entorno (Docker):**
+```bash
+cd docker
+cp .env.example .env
+# Edita .env con tus credenciales y tokens
 ```
 
 ### 3. **Ejecuta con Docker Compose:**
-   ```bash
-   docker-compose -f compose.yaml up -d
-   ```
+
+**Solo recursos (PostgreSQL, RabbitMQ, Redis):**
+```bash
+docker compose -f docker/docker-compose.resources.yml up -d
+```
+
+**Stack completo (recursos + API + frontend):**
+```bash
+docker compose -f docker/docker-compose.yml up -d
+```
+
+**Documentación completa de Docker:** `docker/README.md`
 
 ### 4. **O ejecuta localmente:**
-   ```bash
-   # Restaurar dependencias
-   dotnet restore
-   
-   # Ejecutar migraciones
-   dotnet ef database update --project WallapopNotification
-   
-   # Ejecutar API
-   dotnet run --project Apps/Api
-   ```
 
+**Backend:**
+```bash
+cd backend/api
+dotnet restore
+dotnet build
+dotnet run --project api
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
 ---
 
 ## 📚 **Cómo funciona**
