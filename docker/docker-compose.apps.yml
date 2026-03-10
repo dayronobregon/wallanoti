@@ -13,8 +13,8 @@ services:
       ConnectionStrings__Postgres: Host=postgres;Database=wallanoti_db;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
       ConnectionStrings__Redis: redis:6379
       RabbitMq__HostName: rabbitmq
-      RabbitMq__UserName: ${RABBITMQ_USER:-guest}
-      RabbitMq__Password: ${RABBITMQ_PASSWORD:-guest}
+      RabbitMq__UserName: ${RABBITMQ_USER:-admin}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:-admin}
       RabbitMq__VirtualHost: /
       RabbitMq__Port: 5672
       Jwt__Secret: ${JWT_SECRET:-CHANGE_ME_USE_ENV_OR_USER_SECRETS_MIN_32_CHARS}

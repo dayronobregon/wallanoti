@@ -50,7 +50,7 @@ docker compose -f docker-compose.yml up -d
 | RabbitMQ  | 5672   | http://localhost:15672       |
 | Redis     | 6379   | -                            |
 
-**RabbitMQ Management**: usuario/contraseña según `.env` (default: `guest`/`guest`)
+**RabbitMQ Management**: usuario/contraseña según `.env` (default: `admin`/`admin`)
 
 ### Aplicaciones
 
