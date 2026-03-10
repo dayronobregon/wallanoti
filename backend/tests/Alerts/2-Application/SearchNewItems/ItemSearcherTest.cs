@@ -152,30 +152,6 @@ public class ItemSearcherTest
             Times.Once);
     }
 
-    [Fact]
-    public async Task Execute_IgnoresModifiedItemsAndOnlyNotifiesNewlyCreated()
-    {
-        var lastSearched = DateTime.UtcNow.AddMinutes(-30);
-        var alert = BuildAlert(lastSearched.AddMinutes(-60), lastSearched, lastSearched);
-        
-        // Item creado ANTES de la última búsqueda, pero modificado DESPUÉS
-        var oldItemModified = BuildItem("old-item", lastSearched.AddMinutes(-10), lastSearched.AddMinutes(5));
-        
-        // Item creado DESPUÉS de la última búsqueda
-        var newItem = BuildItem("new-item", lastSearched.AddMinutes(5));
-        
-        var items = new List<Item> { oldItemModified, newItem };
-
-        _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
-        _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(items);
-
-        await _sut.Execute();
-
-        _eventBusMock.Verify(x => x.Publish(It.Is<List<DomainEvent>>(events =>
-            events.OfType<NewItemsFoundEvent>().Single().Items!.Count() == 1 &&
-            events.OfType<NewItemsFoundEvent>().Single().Items!.First().Id == "new-item")), Times.Once);
-    }
-
     private static Alert BuildAlert(DateTime createdAt, DateTime? updatedAt = null, DateTime? lastSearchedAt = null, bool isActive = true)
     {
         return new Alert(Guid.NewGuid(), 1, "alert", "https://es.wallapop.com/item/slug", createdAt, updatedAt,

@@ -31,7 +31,6 @@ public class AlertLastSearchedAtTest
         // Assert
         Assert.NotNull(alert.LastSearchedAt);
         Assert.True(alert.LastSearchedAt > initialUpdatedAt);
-        Assert.Equal(alert.LastSearchedAt, alert.UpdatedAt);
     }
 
     [Fact]

@@ -6,12 +6,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tests", "tests\tests.csproj
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2E85C545-202A-480F-BEB4-2A25050C9926}"
 	ProjectSection(SolutionItems) = preProject
-		docker\.DS_Store = docker\.DS_Store
-		docker\Dockerfile = docker\Dockerfile
-		docker\initdb\wallanoti.sql = docker\initdb\wallanoti.sql
-		docker\docker-compose.yml = docker\docker-compose.yml
-		docker\.env.example = docker\.env.example
 		AGENTS.md = AGENTS.md
+		Dockerfile = Dockerfile
+		..\docker\initdb\001_create_schema.sql = ..\docker\initdb\001_create_schema.sql
+		..\docker\docker-compose.apps.yml = ..\docker\docker-compose.apps.yml
+		..\docker\README.md = ..\docker\README.md
+		..\docker\docker-compose.resources.yml = ..\docker\docker-compose.resources.yml
+		..\docker\.env = ..\docker\.env
+		..\docker\docker-compose.yml = ..\docker\docker-compose.yml
+		..\docker\.env.example = ..\docker\.env.example
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "api", "api\api.csproj", "{9E73C383-2D5A-494C-8EBD-5393DC4455EC}"
