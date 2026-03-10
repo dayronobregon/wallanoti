@@ -24,7 +24,7 @@ services:
       - wallanoti
 
   rabbitmq:
-    image: rabbitmq:latest
+    image: rabbitmq:management
     container_name: wallanoti-rabbitmq
     restart: unless-stopped
     ports:
