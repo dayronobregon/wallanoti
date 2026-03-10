@@ -3,6 +3,9 @@ name: api-cd
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'backend/**'
+      - 'docker/**'
 
 jobs:
   build-and-push-dockerfile-image:
