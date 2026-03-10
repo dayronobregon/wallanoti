@@ -19,8 +19,8 @@ on:
       - release/*
 
 jobs:
-  tests:
-    name: tests
+  backend-test:
+    name: backend-test
     runs-on: ubuntu-latest
 
     steps:
