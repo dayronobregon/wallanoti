@@ -1,4 +1,4 @@
-name: Frontend CI
+name: ui-ci
 
 on:
   push:
