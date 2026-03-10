@@ -1,4 +1,4 @@
-name: cd
+name: api-cd
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./backend
-          file: ./backend/docker/Dockerfile
+          file: ./backend/Dockerfile
           push: true
           # Make sure to replace with your own namespace and repository
           tags: |
