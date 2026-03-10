@@ -66,6 +66,7 @@ For specific implementation guidelines, see:
 
 - **Backend guidelines:** `backend/AGENTS.md`
 - **Frontend guidelines:** `frontend/AGENTS.md`
+- **Docker deployment:** `docker/README.md`
 
 ## Quick Start
 

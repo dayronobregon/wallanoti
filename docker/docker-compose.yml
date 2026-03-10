@@ -1,0 +1,5 @@
+name: wallanoti
+
+include:
+  - docker-compose.resources.yml
+  - docker-compose.apps.yml
