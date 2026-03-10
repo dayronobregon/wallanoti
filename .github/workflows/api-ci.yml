@@ -1,7 +1,4 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: ci
+name: api-ci
 
 on:
   push:
@@ -22,22 +19,42 @@ on:
       - release/*
 
 jobs:
- tests:
-    name: tests
+  backend-test:
+    name: backend-test
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-    - name: Restore dependencies
-      working-directory: backend
-      run: dotnet restore
-    - name: Build
-      working-directory: backend
-      run: dotnet build --no-restore
-    - name: Test
-      working-directory: backend
-      run: dotnet test tests/tests.csproj --no-build --verbosity normal
+      - uses: actions/checkout@v4
+
+      - name: Detectar cambios en backend
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+
+      - name: Setup .NET
+        if: steps.changes.outputs.backend == 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        if: steps.changes.outputs.backend == 'true'
+        working-directory: backend
+        run: dotnet restore
+
+      - name: Build
+        if: steps.changes.outputs.backend == 'true'
+        working-directory: backend
+        run: dotnet build --no-restore
+
+      - name: Test
+        if: steps.changes.outputs.backend == 'true'
+        working-directory: backend
+        run: dotnet test tests/tests.csproj --no-build --verbosity normal
+
+      - name: Omitir backend (sin cambios)
+        if: steps.changes.outputs.backend != 'true'
+        run: echo "No hay cambios en backend; check marcado como OK."
