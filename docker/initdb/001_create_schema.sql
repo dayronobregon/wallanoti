@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS users (
     "Id" BIGINT UNIQUE,
     "UserName" VARCHAR(50) NOT NULL,
     "VerificationCode" VARCHAR(6)
-)
+);
 
 CREATE TABLE IF NOT EXISTS alerts (
     "Id" UUID PRIMARY KEY,
@@ -14,16 +14,16 @@ CREATE TABLE IF NOT EXISTS alerts (
     "UpdatedAt" TIMESTAMP NULL,
     "LastSearchedAt" TIMESTAMP NULL,
     CONSTRAINT alerts_users_FK FOREIGN KEY ("UserId") REFERENCES users("Id") ON DELETE CASCADE ON UPDATE CASCADE
-)
+);
 
 CREATE TABLE IF NOT EXISTS alert_counters (
     "Id" UUID PRIMARY KEY,
     "AlertId" UUID NOT NULL,
     "Total" BIGINT NOT NULL,
     CONSTRAINT alert_counters_alerts_FK FOREIGN KEY ("AlertId") REFERENCES alerts("Id") ON DELETE CASCADE ON UPDATE CASCADE
-)
+);
 
-CREATE TABLE IF NOT EXISTS notifications ( 
+CREATE TABLE IF NOT EXISTS notifications (
     "Id" UUID PRIMARY KEY,
     "UserId" BIGINT NOT NULL,
     "Title" VARCHAR(200) NOT NULL,
@@ -35,5 +35,4 @@ CREATE TABLE IF NOT EXISTS notifications (
     "Url" VARCHAR(500) NOT NULL,
     "CreatedAt" TIMESTAMP NOT NULL,
     CONSTRAINT notifications_users_FK FOREIGN KEY ("UserId") REFERENCES users("Id") ON DELETE CASCADE ON UPDATE CASCADE
-)
-
+);
