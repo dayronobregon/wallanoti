@@ -31,21 +31,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
 
-    - name: Restore dependencies
-      working-directory: backend
-      run: dotnet restore
+      - name: Restore dependencies
+        working-directory: backend
+        run: dotnet restore
 
-    - name: Build
-      working-directory: backend
-      run: dotnet build --no-restore
+      - name: Build
+        working-directory: backend
+        run: dotnet build --no-restore
 
-    - name: Test
-      working-directory: backend
-      run: dotnet test tests/tests.csproj --no-build --verbosity normal
+      - name: Test
+        working-directory: backend
+        run: dotnet test tests/tests.csproj --no-build --verbosity normal
