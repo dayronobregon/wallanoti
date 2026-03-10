@@ -66,7 +66,6 @@ public sealed class Alert : AggregateRoot
     public void RecordSearch()
     {
         LastSearchedAt = TimeProvider.System.GetUtcNow().UtcDateTime;
-        UpdatedAt = LastSearchedAt.Value;
     }
 
     private void Touch()

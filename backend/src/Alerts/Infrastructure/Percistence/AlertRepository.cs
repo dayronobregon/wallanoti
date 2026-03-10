@@ -47,8 +47,7 @@ public sealed class AlertRepository : IAlertRepository
         return await _context.Alerts
             .Where(x => x.Id == alertId)
             .ExecuteUpdateAsync(setters => setters
-                .SetProperty(alert => alert.LastSearchedAt, lastSearchedAt)
-                .SetProperty(alert => alert.UpdatedAt, lastSearchedAt));
+                .SetProperty(alert => alert.LastSearchedAt, lastSearchedAt));
     }
 
     public async Task<IEnumerable<Alert>> GetByUserId(long userId)

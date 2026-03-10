@@ -66,11 +66,9 @@ public sealed class ItemSearcher
 
             var cachedItems = GetCachedItems(alert.GetCacheKey());
 
-            var referenceDate = alert.LastSearchedAt ?? alert.CreatedAt;
-            
             var newItems = (from item in wallapopItems
-                let createdAt = DateTimeOffset.FromUnixTimeMilliseconds(item.CreatedAt).DateTime
-                where createdAt.CompareTo(referenceDate) >= 0 &&
+                let itemCreatedAt = DateTimeOffset.FromUnixTimeMilliseconds(item.CreatedAt).DateTime
+                where itemCreatedAt.CompareTo(alert.CreatedAt) >= 0 &&
                       !AlreadyFound(cachedItems, item.Id)
                 select item).ToList();
 
