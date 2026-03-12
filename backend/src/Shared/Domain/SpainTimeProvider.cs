@@ -15,11 +15,8 @@ public class SpainTimeProvider : TimeProvider
 
     public override TimeZoneInfo LocalTimeZone => _spainZone;
 
-    public override DateTimeOffset GetLocalNow()
-    {
-        var utc = GetUtcNow();
-        return TimeZoneInfo.ConvertTime(utc, _spainZone);
-    }
+    // The base TimeProvider.GetLocalNow uses GetUtcNow() and LocalTimeZone.
+    // No need to override it; keep default behavior to avoid signature issues.
 
     private static TimeZoneInfo ResolveSpainTimeZone()
     {
