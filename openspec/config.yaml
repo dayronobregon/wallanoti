@@ -1,0 +1,30 @@
+schema: spec-driven
+
+context: |
+  Tech stack: .NET 8 monorepo (C# backend: Clean Arch/DDD/CQRS/MediatR/EF Core/PostgreSQL v9/RabbitMQ/Redis/SignalR/Telegram.Bot/Coravel; Vue 3/TS frontend: Vite/Pinia/TailwindCSS/OpenAPI)
+  Architecture: Clean Architecture + DDD + CQRS + Event-Driven
+  Testing: dotnet test (xUnit-style backend tests); vue-tsc (frontend type-check)
+  Linting/Formatting: dotnet format (backend); PostCSS/Tailwind (frontend)
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Identify affected modules/packages
+  specs:
+    - Use Given/When/Then format for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group tasks by phase (infrastructure, implementation, testing)
+    - Use hierarchical numbering (1.1, 1.2, etc.)
+    - Keep tasks small enough to complete in one session
+  apply:
+    - Follow existing code patterns and conventions (see backend/AGENTS.md, frontend/AGENTS.md)
+    - Load clean-ddd-hexagonal and tdd skills for backend changes
+  verify:
+    - Run dotnet test / npm run type-check
+    - Compare implementation against every spec scenario
+  archive:
+    - Warn before merging destructive deltas (large removals)

@@ -16,6 +16,7 @@ public sealed class WallanotiDbContext : DbContext
     public DbSet<Alert> Alerts { get; set; } = null!;
     public DbSet<AlertCounter.Domain.AlertCounter> AlertCounters { get; set; } = null!;
     public DbSet<NotificationEntity> Notifications { get; set; } = null!;
+    public DbSet<ProcessedWallapopItemEntity> ProcessedWallapopItems { get; set; } = null!;
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,6 +24,7 @@ public sealed class WallanotiDbContext : DbContext
         modelBuilder.ApplyConfiguration(new AlertsConfiguration());
         modelBuilder.ApplyConfiguration(new AlertCounterConfiguration());
         modelBuilder.ApplyConfiguration(new NotificationConfiguration());
+        modelBuilder.ApplyConfiguration(new ProcessedWallapopItemConfiguration());
 
         base.OnModelCreating(modelBuilder);
     }
