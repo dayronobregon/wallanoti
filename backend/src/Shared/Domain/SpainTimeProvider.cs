@@ -20,19 +20,17 @@ public class SpainTimeProvider : TimeProvider
 
     private static TimeZoneInfo ResolveSpainTimeZone()
     {
-        string[] candidates = new[] { "Europe/Madrid", "Romance Standard Time" };
-
-        foreach (var id in candidates)
+        try
         {
-            try
-            {
-                return TimeZoneInfo.FindSystemTimeZoneById(id);
-            }
-            catch (TimeZoneNotFoundException) { }
-            catch (InvalidTimeZoneException) { }
+            return TimeZoneInfo.FindSystemTimeZoneById("Europe/Madrid");
+        }
+        catch (InvalidTimeZoneException)
+        {
+        }
+        catch (TimeZoneNotFoundException)
+        {
         }
 
-        // Fallback to system local timezone if none matched
-        return TimeZoneInfo.Local;
+        return TimeZoneInfo.Utc;
     }
 }

@@ -23,7 +23,7 @@ public sealed class AlertCommandHanlder : IRequestHandler<CreateAlertCommand>
     public async Task Handle(CreateAlertCommand command, CancellationToken cancellationToken)
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-        var alert = Alert.Create(command.UserId, command.AlertName, command.AlertUrl, now, now);
+        var alert = Alert.Create(command.UserId, command.AlertName, command.AlertUrl, now);
 
         await _repository.Add(alert);
 

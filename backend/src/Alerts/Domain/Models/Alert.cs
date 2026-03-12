@@ -18,7 +18,7 @@ public sealed class Alert : AggregateRoot
     {
     }
 
-    public Alert(Guid id, long userId, string name, string url, DateTime createdAt, DateTime? updatedAt,
+    public Alert(Guid id, long userId, string name, string url, DateTime createdAt, DateTime? updatedAt = null,
         bool isActive = true, DateTime? lastSearchedAt = null)
     {
         Id = id;
@@ -31,9 +31,9 @@ public sealed class Alert : AggregateRoot
         LastSearchedAt = lastSearchedAt;
     }
 
-    public static Alert Create(long userId, string name, string url, DateTime createdAt, DateTime updatedAt)
+    public static Alert Create(long userId, string name, string url, DateTime createdAt)
     {
-        var alert = new Alert(Guid.NewGuid(), userId, name, url, createdAt, updatedAt);
+        var alert = new Alert(Guid.NewGuid(), userId, name, url, createdAt, null);
 
         return alert;
     }
@@ -47,7 +47,7 @@ public sealed class Alert : AggregateRoot
             Record(new NewItemsFoundEvent(Guid.NewGuid().ToString(), eventTimestamp.ToString("o"), Id,
                 UserId,
                 wallapopItems));
-            
+
             RecordSearch(searchTimestamp);
         }
     }
