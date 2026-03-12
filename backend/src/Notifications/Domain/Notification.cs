@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Text;
 using Wallanoti.Src.Shared.Domain.Events;
@@ -63,7 +64,14 @@ public sealed class Notification(
     public static Notification Create(Guid id, long userId, string title, string description, Price? price,
         List<string>? images, string location, Url url)
     {
-        var now = Wallanoti.Src.Shared.Domain.AppTime.Current.GetUtcNow();
+        // Default wrapper: keep backward compatibility by delegating to AppTime.Current
+        return Create(id, userId, title, description, price, images, location, url, Wallanoti.Src.Shared.Domain.AppTime.Current);
+    }
+
+    public static Notification Create(Guid id, long userId, string title, string description, Price? price,
+        List<string>? images, string location, Url url, TimeProvider timeProvider)
+    {
+        var now = timeProvider.GetUtcNow();
 
         var notification = new Notification(
             id,
@@ -76,7 +84,7 @@ public sealed class Notification(
             now.UtcDateTime,
             images);
 
-            notification.Record(new NotificationCreatedEvent(notification.Id.ToString(),
+        notification.Record(new NotificationCreatedEvent(notification.Id.ToString(),
             now.ToString("o"), notification));
 
         return notification;
