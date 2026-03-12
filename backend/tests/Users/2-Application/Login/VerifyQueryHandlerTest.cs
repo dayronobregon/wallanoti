@@ -10,6 +10,7 @@ public class VerifyQueryHandlerTest
 {
     private readonly Mock<IUserRepository> _userRepositoryMock = new();
     private readonly IConfiguration _configuration;
+    private readonly TimeProvider _timeProvider = TimeProvider.System;
     private readonly VerifyQueryHandler _sut;
 
     public VerifyQueryHandlerTest()
@@ -23,7 +24,7 @@ public class VerifyQueryHandlerTest
             })
             .Build();
 
-        _sut = new VerifyQueryHandler(_configuration, _userRepositoryMock.Object);
+        _sut = new VerifyQueryHandler(_configuration, _userRepositoryMock.Object, _timeProvider);
     }
 
     [Fact]

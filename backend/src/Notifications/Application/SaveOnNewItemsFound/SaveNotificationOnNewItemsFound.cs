@@ -9,11 +9,13 @@ public sealed class SaveNotificationOnNewItemsFound : IDomainEventHandler<NewIte
 {
     private readonly INotificationRepository _notificationRepository;
     private readonly IEventBus _eventBus;
+    private readonly TimeProvider _timeProvider;
 
-    public SaveNotificationOnNewItemsFound(INotificationRepository notificationRepository, IEventBus eventBus)
+    public SaveNotificationOnNewItemsFound(INotificationRepository notificationRepository, IEventBus eventBus, TimeProvider timeProvider)
     {
         _notificationRepository = notificationRepository;
         _eventBus = eventBus;
+        _timeProvider = timeProvider;
     }
 
     public async Task Handle(NewItemsFoundEvent @event)
@@ -30,7 +32,8 @@ public sealed class SaveNotificationOnNewItemsFound : IDomainEventHandler<NewIte
                 item.Price,
                 item.Images,
                 item.Location.FullLocation,
-                Url.CreateFromSlug(item.WebSlug)
+                Url.CreateFromSlug(item.WebSlug),
+                _timeProvider
             );
 
             notifications.Add(notification);

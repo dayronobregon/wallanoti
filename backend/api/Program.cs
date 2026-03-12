@@ -56,15 +56,8 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddSchedulerTask();
 
-// Register Spain TimeProvider and expose through AppTime
+// Register Spain TimeProvider for Spain timezone (server is in US, clients are in Spain)
 builder.Services.AddSingleton<TimeProvider, SpainTimeProvider>();
-// Ensure AppTime.Current is set to our SpainTimeProvider instance
-builder.Services.AddSingleton(provider =>
-{
-    var tp = provider.GetRequiredService<TimeProvider>();
-    AppTime.Current = tp;
-    return tp;
-});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

@@ -6,13 +6,20 @@ namespace Wallanoti.Tests.Notifications._1_Domain;
 
 public class NotificationTest
 {
+    private readonly TimeProvider _timeProvider;
+
+    public NotificationTest()
+    {
+        _timeProvider = TimeProvider.System;
+    }
+
     [Fact]
     public void Create_ShouldRaiseDomainEventAndSetProperties()
     {
         var id = Guid.NewGuid();
         var url = Url.CreateFromSlug("item-slug");
         var notification = Notification.Create(id, 5, "title", "description", Price.Create(50, 60),
-            new List<string> { "img" }, "City, Region", url);
+            new List<string> { "img" }, "City, Region", url, _timeProvider);
 
         Assert.Equal(id, notification.Id);
         Assert.Equal(5, notification.UserId);
@@ -30,7 +37,7 @@ public class NotificationTest
     public void FormattedString_ShouldIncludeKeyInformation()
     {
         var notification = Notification.Create(Guid.NewGuid(), 10, "Bike", "Great condition",
-            Price.Create(200, 250), new List<string>(), "Madrid", Url.CreateFromSlug("bike-slug"));
+            Price.Create(200, 250), new List<string>(), "Madrid", Url.CreateFromSlug("bike-slug"), _timeProvider);
 
         var formatted = notification.FormattedString();
 
@@ -45,7 +52,7 @@ public class NotificationTest
     public void NotificationCreatedEvent_SystemTextJsonRoundtrip_ShouldPreservePriceAndUrl()
     {
         var notification = Notification.Create(Guid.NewGuid(), 10, "Bike", "Great condition",
-            Price.Create(200, 250), new List<string>(), "Madrid", Url.CreateFromSlug("bike-slug"));
+            Price.Create(200, 250), new List<string>(), "Madrid", Url.CreateFromSlug("bike-slug"), _timeProvider);
         var createdEvent = new NotificationCreatedEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString("O"),
             notification);
 
@@ -91,7 +98,8 @@ public class NotificationTest
             Price.Create(200, 250),
             [],
             "Madrid",
-            Url.CreateFromSlug("bike-slug"));
+            Url.CreateFromSlug("bike-slug"),
+            _timeProvider);
 
         var formatted = notification.FormattedString();
 

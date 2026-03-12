@@ -15,11 +15,13 @@ public sealed class VerifyQueryHandler : IRequestHandler<VerifyUserRequest, stri
 {
     private readonly IConfiguration _configuration;
     private readonly IUserRepository _userRepository;
+    private readonly TimeProvider _timeProvider;
 
-    public VerifyQueryHandler(IConfiguration configuration, IUserRepository userRepository)
+    public VerifyQueryHandler(IConfiguration configuration, IUserRepository userRepository, TimeProvider timeProvider)
     {
         _configuration = configuration;
         _userRepository = userRepository;
+        _timeProvider = timeProvider;
     }
 
     public async Task<string?> Handle(VerifyUserRequest request, CancellationToken cancellationToken)
@@ -50,7 +52,7 @@ public sealed class VerifyQueryHandler : IRequestHandler<VerifyUserRequest, stri
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.PreferredUsername, user.UserName),
             ]),
-            Expires = DateTime.UtcNow.AddHours(24),
+            Expires = _timeProvider.GetUtcNow().AddHours(24).UtcDateTime,
             SigningCredentials = credentials,
             Audience = _configuration["Jwt:Audience"],
             Issuer = _configuration["Jwt:Issuer"]

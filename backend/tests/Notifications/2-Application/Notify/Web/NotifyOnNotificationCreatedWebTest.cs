@@ -8,6 +8,7 @@ namespace Wallanoti.Tests.Notifications._2_Application.Notify.Web;
 public class NotifyOnNotificationCreatedWebTest
 {
     private readonly Mock<IWebNotificationSender> _webSenderMock = new();
+    private readonly TimeProvider _timeProvider = TimeProvider.System;
 
     [Fact]
     public async Task Handle_ShouldSendWebNotification()
@@ -15,7 +16,7 @@ public class NotifyOnNotificationCreatedWebTest
         var handler = new NotifyOnNotificationCreatedWeb(_webSenderMock.Object);
         _webSenderMock.Setup(x => x.Notify(It.IsAny<Notification>())).Returns(Task.CompletedTask);
         var notification = Notification.Create(Guid.NewGuid(), 3, "title", "description", Price.Create(10, 12),
-            new List<string>(), "city", Url.CreateFromSlug("slug"));
+            new List<string>(), "city", Url.CreateFromSlug("slug"), _timeProvider);
         var @event = new NotificationCreatedEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString("o"),
             notification);
 

@@ -18,14 +18,14 @@ public sealed class Alert : AggregateRoot
     {
     }
 
-    private Alert(Guid id, long userId, string name, string url)
+    private Alert(Guid id, long userId, string name, string url, TimeProvider timeProvider)
     {
         Id = id;
         UserId = userId;
         Name = name;
         Url = Url.Create(url);
-        CreatedAt = Wallanoti.Src.Shared.Domain.AppTime.Current.GetUtcNow().UtcDateTime;
-        UpdatedAt = Wallanoti.Src.Shared.Domain.AppTime.Current.GetUtcNow().UtcDateTime;
+        CreatedAt = timeProvider.GetUtcNow().UtcDateTime;
+        UpdatedAt = timeProvider.GetUtcNow().UtcDateTime;
         IsActive = true;
     }
 
@@ -42,46 +42,46 @@ public sealed class Alert : AggregateRoot
         LastSearchedAt = lastSearchedAt;
     }
 
-    public static Alert Create(long userId, string name, string url)
+    public static Alert Create(long userId, string name, string url, TimeProvider timeProvider)
     {
-        var alert = new Alert(Guid.NewGuid(), userId, name, url);
+        var alert = new Alert(Guid.NewGuid(), userId, name, url, timeProvider);
 
         return alert;
     }
 
     public string GetCacheKey() => Id.ToString();
 
-    public void NewSearch(List<Item>? wallapopItems)
+    public void NewSearch(List<Item>? wallapopItems, TimeProvider timeProvider)
     {
         if (wallapopItems is not null && wallapopItems.Count > 0)
         {
-            Record(new NewItemsFoundEvent(Guid.NewGuid().ToString(), Wallanoti.Src.Shared.Domain.AppTime.Current.GetUtcNow().ToString("o"), Id,
+            Record(new NewItemsFoundEvent(Guid.NewGuid().ToString(), timeProvider.GetUtcNow().ToString("o"), Id,
                 UserId,
                 wallapopItems));
             
-            RecordSearch();
+            RecordSearch(timeProvider);
         }
     }
 
-    public void RecordSearch()
+    public void RecordSearch(TimeProvider timeProvider)
     {
-        LastSearchedAt = Wallanoti.Src.Shared.Domain.AppTime.Current.GetUtcNow().UtcDateTime;
+        LastSearchedAt = timeProvider.GetUtcNow().UtcDateTime;
     }
 
-    private void Touch()
+    private void Touch(TimeProvider timeProvider)
     {
-        UpdatedAt = Wallanoti.Src.Shared.Domain.AppTime.Current.GetUtcNow().UtcDateTime;
+        UpdatedAt = timeProvider.GetUtcNow().UtcDateTime;
     }
 
-    public void Deactivate()
+    public void Deactivate(TimeProvider timeProvider)
     {
         IsActive = false;
-        Touch();
+        Touch(timeProvider);
     }
 
-    public void Activate()
+    public void Activate(TimeProvider timeProvider)
     {
         IsActive = true;
-        Touch();
+        Touch(timeProvider);
     }
 }

@@ -20,6 +20,7 @@ public class ItemSearcherTest
     private readonly Mock<IPushNotificationSender> _pushNotificationSenderMock = new();
     private readonly IDistributedCache _cache;
     private readonly Mock<IEventBus> _eventBusMock = new();
+    private readonly TimeProvider _timeProvider = TimeProvider.System;
     private readonly ItemSearcher _sut;
 
     public ItemSearcherTest()
@@ -48,7 +49,8 @@ public class ItemSearcherTest
             _wallapopRepositoryMock.Object,
             _pushNotificationSenderMock.Object,
             configuration,
-            _cache);
+            _cache,
+            _timeProvider);
     }
 
     [Fact]

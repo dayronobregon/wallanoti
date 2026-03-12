@@ -8,13 +8,14 @@ namespace Wallanoti.Tests.Alerts._2_Application.ActivateAlert;
 public class ActivateAlertCommandHandlerTest
 {
     private readonly Mock<IAlertRepository> _alertRepositoryMock = new();
+    private readonly TimeProvider _timeProvider = TimeProvider.System;
     private readonly ActivateAlertCommandHandler _sut;
 
     public ActivateAlertCommandHandlerTest()
     {
         _alertRepositoryMock.Setup(x => x.Update(It.IsAny<Alert>()))
             .Returns(Task.CompletedTask);
-        _sut = new ActivateAlertCommandHandler(_alertRepositoryMock.Object);
+        _sut = new ActivateAlertCommandHandler(_alertRepositoryMock.Object, _timeProvider);
     }
 
     [Fact]
