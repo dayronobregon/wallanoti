@@ -56,6 +56,9 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddSchedulerTask();
 
+// Register Spain TimeProvider for Spain timezone (server is in US, clients are in Spain)
+builder.Services.AddSingleton<TimeProvider, SpainTimeProvider>();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();

@@ -111,7 +111,8 @@ public class TelegramPushNotificationSenderTest
             Price.Create(10, 12),
             images.ToList(),
             "city",
-            Url.CreateFromSlug("slug")
+            Url.CreateFromSlug("slug"),
+            new DateTime(2024, 1, 15, 10, 30, 0, DateTimeKind.Utc)
         );
     }
 }

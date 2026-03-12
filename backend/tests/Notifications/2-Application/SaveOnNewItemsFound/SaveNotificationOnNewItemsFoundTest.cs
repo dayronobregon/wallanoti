@@ -12,6 +12,7 @@ public class SaveNotificationOnNewItemsFoundTest
 {
     private readonly Mock<INotificationRepository> _repositoryMock = new();
     private readonly Mock<IEventBus> _eventBusMock = new();
+    private readonly TimeProvider _timeProvider = TimeProvider.System;
     private readonly SaveNotificationOnNewItemsFound _sut;
 
     public SaveNotificationOnNewItemsFoundTest()
@@ -20,7 +21,7 @@ public class SaveNotificationOnNewItemsFoundTest
             .Returns(Task.CompletedTask);
         _eventBusMock.Setup(x => x.Publish(It.IsAny<List<DomainEvent>>()))
             .Returns(Task.CompletedTask);
-        _sut = new SaveNotificationOnNewItemsFound(_repositoryMock.Object, _eventBusMock.Object);
+        _sut = new SaveNotificationOnNewItemsFound(_repositoryMock.Object, _eventBusMock.Object, _timeProvider);
     }
 
     [Fact]

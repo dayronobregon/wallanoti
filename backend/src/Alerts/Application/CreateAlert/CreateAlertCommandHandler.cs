@@ -11,16 +11,19 @@ public sealed class AlertCommandHanlder : IRequestHandler<CreateAlertCommand>
 {
     private readonly IEventBus _eventBus;
     private readonly IAlertRepository _repository;
+    private readonly TimeProvider _timeProvider;
 
-    public AlertCommandHanlder(IEventBus eventBus, IAlertRepository repository)
+    public AlertCommandHanlder(IEventBus eventBus, IAlertRepository repository, TimeProvider timeProvider)
     {
         _eventBus = eventBus;
         _repository = repository;
+        _timeProvider = timeProvider;
     }
 
     public async Task Handle(CreateAlertCommand command, CancellationToken cancellationToken)
     {
-        var alert = Alert.Create(command.UserId, command.AlertName, command.AlertUrl);
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var alert = Alert.Create(command.UserId, command.AlertName, command.AlertUrl, now);
 
         await _repository.Add(alert);
 

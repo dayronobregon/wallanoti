@@ -6,10 +6,12 @@ namespace Wallanoti.Src.Alerts.Application.DeactivateAlert;
 public sealed class DeactivateAlertCommandHandler : IRequestHandler<DeactivateAlertCommand>
 {
     private readonly IAlertRepository _alertRepository;
+    private readonly TimeProvider _timeProvider;
 
-    public DeactivateAlertCommandHandler(IAlertRepository alertRepository)
+    public DeactivateAlertCommandHandler(IAlertRepository alertRepository, TimeProvider timeProvider)
     {
         _alertRepository = alertRepository;
+        _timeProvider = timeProvider;
     }
 
     public async Task Handle(DeactivateAlertCommand request, CancellationToken cancellationToken)
@@ -21,7 +23,8 @@ public sealed class DeactivateAlertCommandHandler : IRequestHandler<DeactivateAl
             throw new InvalidOperationException($"Alert with ID {request.AlertId} not found");
         }
 
-        alert.Deactivate();
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        alert.Deactivate(now);
         await _alertRepository.Update(alert);
     }
 }

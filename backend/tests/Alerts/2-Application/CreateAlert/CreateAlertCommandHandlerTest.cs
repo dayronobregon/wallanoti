@@ -10,13 +10,14 @@ public class CreateAlertCommandHandlerTest
 {
     private readonly Mock<IEventBus> _eventBusMock = new();
     private readonly Mock<IAlertRepository> _alertRepositoryMock = new();
+    private readonly TimeProvider _timeProvider = TimeProvider.System;
     private readonly AlertCommandHanlder _sut;
 
     public CreateAlertCommandHandlerTest()
     {
         _eventBusMock.Setup(x => x.Publish(It.IsAny<List<DomainEvent>>()))
             .Returns(Task.CompletedTask);
-        _sut = new AlertCommandHanlder(_eventBusMock.Object, _alertRepositoryMock.Object);
+        _sut = new AlertCommandHanlder(_eventBusMock.Object, _alertRepositoryMock.Object, _timeProvider);
     }
 
     [Fact]

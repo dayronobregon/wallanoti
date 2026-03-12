@@ -17,13 +17,15 @@ public sealed class ItemSearcher
     private readonly IPushNotificationSender _pushNotificationSender;
     private readonly long? _ownerChatId;
     private readonly IDistributedCache _cache;
+    private readonly TimeProvider _timeProvider;
 
     public ItemSearcher(
         IEventBus eventBus, IAlertRepository alertRepository,
         IWallapopRepository wallapopRepository,
         IPushNotificationSender pushNotificationSender,
         IConfiguration configuration,
-        IDistributedCache cache)
+        IDistributedCache cache,
+        TimeProvider timeProvider)
     {
         _eventBus = eventBus;
         _alertRepository = alertRepository;
@@ -33,6 +35,7 @@ public sealed class ItemSearcher
             ? ownerChatId
             : null;
         _cache = cache;
+        _timeProvider = timeProvider;
     }
 
     public async Task Execute()
@@ -72,15 +75,17 @@ public sealed class ItemSearcher
                       !AlreadyFound(cachedItems, item.Id)
                 select item).ToList();
 
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+
             if (newItems.Count == 0)
             {
-                alert.RecordSearch();
+                alert.RecordSearch(now);
                 await _alertRepository.UpdateLastSearchedAt(alert.Id, alert.LastSearchedAt!.Value);
                 continue;
             }
 
             //Añadir una nueva busqueda con los nuevos items encontrados
-            alert.NewSearch(newItems);
+            alert.NewSearch(newItems, now, now);
 
             //Guardar en cache los ids de los items encontrados
             await _cache.SetAsync(alert.GetCacheKey(),
