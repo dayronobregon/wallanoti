@@ -63,7 +63,7 @@ public sealed class Notification(
     public static Notification Create(Guid id, long userId, string title, string description, Price? price,
         List<string>? images, string location, Url url)
     {
-        var now = TimeProvider.System.GetUtcNow();
+        var now = Wallanoti.Src.Shared.Domain.AppTime.Current.GetUtcNow();
 
         var notification = new Notification(
             id,
@@ -76,7 +76,7 @@ public sealed class Notification(
             now.UtcDateTime,
             images);
 
-        notification.Record(new NotificationCreatedEvent(notification.Id.ToString(),
+            notification.Record(new NotificationCreatedEvent(notification.Id.ToString(),
             now.ToString("o"), notification));
 
         return notification;

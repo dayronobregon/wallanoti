@@ -24,8 +24,8 @@ public sealed class Alert : AggregateRoot
         UserId = userId;
         Name = name;
         Url = Url.Create(url);
-        CreatedAt = TimeProvider.System.GetUtcNow().UtcDateTime;
-        UpdatedAt = TimeProvider.System.GetUtcNow().UtcDateTime;
+        CreatedAt = Wallanoti.Src.Shared.Domain.AppTime.Current.GetUtcNow().UtcDateTime;
+        UpdatedAt = Wallanoti.Src.Shared.Domain.AppTime.Current.GetUtcNow().UtcDateTime;
         IsActive = true;
     }
 
@@ -55,7 +55,7 @@ public sealed class Alert : AggregateRoot
     {
         if (wallapopItems is not null && wallapopItems.Count > 0)
         {
-            Record(new NewItemsFoundEvent(Guid.NewGuid().ToString(), TimeProvider.System.GetUtcNow().ToString("o"), Id,
+            Record(new NewItemsFoundEvent(Guid.NewGuid().ToString(), Wallanoti.Src.Shared.Domain.AppTime.Current.GetUtcNow().ToString("o"), Id,
                 UserId,
                 wallapopItems));
             
@@ -65,12 +65,12 @@ public sealed class Alert : AggregateRoot
 
     public void RecordSearch()
     {
-        LastSearchedAt = TimeProvider.System.GetUtcNow().UtcDateTime;
+        LastSearchedAt = Wallanoti.Src.Shared.Domain.AppTime.Current.GetUtcNow().UtcDateTime;
     }
 
     private void Touch()
     {
-        UpdatedAt = TimeProvider.System.GetUtcNow().UtcDateTime;
+        UpdatedAt = Wallanoti.Src.Shared.Domain.AppTime.Current.GetUtcNow().UtcDateTime;
     }
 
     public void Deactivate()
