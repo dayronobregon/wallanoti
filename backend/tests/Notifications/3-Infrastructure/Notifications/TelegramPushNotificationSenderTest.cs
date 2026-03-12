@@ -112,7 +112,7 @@ public class TelegramPushNotificationSenderTest
             images.ToList(),
             "city",
             Url.CreateFromSlug("slug"),
-            TimeProvider.System
+            new DateTime(2024, 1, 15, 10, 30, 0, DateTimeKind.Utc)
         );
     }
 }

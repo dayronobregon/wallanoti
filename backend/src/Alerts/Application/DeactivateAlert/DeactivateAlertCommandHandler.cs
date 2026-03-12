@@ -23,7 +23,8 @@ public sealed class DeactivateAlertCommandHandler : IRequestHandler<DeactivateAl
             throw new InvalidOperationException($"Alert with ID {request.AlertId} not found");
         }
 
-        alert.Deactivate(_timeProvider);
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        alert.Deactivate(now);
         await _alertRepository.Update(alert);
     }
 }

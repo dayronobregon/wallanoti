@@ -22,6 +22,8 @@ public sealed class SaveNotificationOnNewItemsFound : IDomainEventHandler<NewIte
     {
         var notifications = new List<Notification>();
         var events = new List<DomainEvent>();
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        
         foreach (var item in @event.Items ?? [])
         {
             var notification = Notification.Create(
@@ -33,7 +35,7 @@ public sealed class SaveNotificationOnNewItemsFound : IDomainEventHandler<NewIte
                 item.Images,
                 item.Location.FullLocation,
                 Url.CreateFromSlug(item.WebSlug),
-                _timeProvider
+                now
             );
 
             notifications.Add(notification);

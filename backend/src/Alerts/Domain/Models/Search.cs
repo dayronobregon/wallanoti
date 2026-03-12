@@ -6,13 +6,13 @@ public sealed class Search
     public List<string>? ItemIds { get; private set; }
     public required DateOnly Date { get; init; }
 
-    public static Search NewSearch(Guid alertId, List<Item>? items, TimeProvider timeProvider)
+    public static Search NewSearch(Guid alertId, List<Item>? items, DateOnly date)
     {
         return new Search
         {
             AlertId = alertId,
             ItemIds = items?.Select(x => x.Id).ToList(),
-            Date = DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime)
+            Date = date
         };
     }
 

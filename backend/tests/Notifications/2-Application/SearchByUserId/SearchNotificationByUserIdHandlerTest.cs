@@ -9,7 +9,7 @@ public class SearchNotificationByUserIdHandlerTest
 {
     private readonly Mock<INotificationRepository> _repositoryMock = new();
     private readonly SearchNotificationByUserIdHandler _sut;
-    private readonly TimeProvider _timeProvider = TimeProvider.System;
+    private readonly DateTime _now = new DateTime(2024, 1, 15, 10, 30, 0, DateTimeKind.Utc);
 
     public SearchNotificationByUserIdHandlerTest()
     {
@@ -20,7 +20,7 @@ public class SearchNotificationByUserIdHandlerTest
     public async Task Handle_ReturnsMappedNotifications()
     {
         var notification = Notification.Create(Guid.NewGuid(), 1, "title", "description", Price.Create(30, 40),
-            new List<string> { "img" }, "City", Url.CreateFromSlug("slug"), _timeProvider
+            new List<string> { "img" }, "City", Url.CreateFromSlug("slug"), _now
         );
 
         _repositoryMock.Setup(x => x.ByUserId(1, It.IsAny<CancellationToken>()))

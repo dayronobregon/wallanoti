@@ -75,15 +75,17 @@ public sealed class ItemSearcher
                       !AlreadyFound(cachedItems, item.Id)
                 select item).ToList();
 
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+
             if (newItems.Count == 0)
             {
-                alert.RecordSearch(_timeProvider);
+                alert.RecordSearch(now);
                 await _alertRepository.UpdateLastSearchedAt(alert.Id, alert.LastSearchedAt!.Value);
                 continue;
             }
 
             //Añadir una nueva busqueda con los nuevos items encontrados
-            alert.NewSearch(newItems, _timeProvider);
+            alert.NewSearch(newItems, now, now);
 
             //Guardar en cache los ids de los items encontrados
             await _cache.SetAsync(alert.GetCacheKey(),

@@ -18,17 +18,6 @@ public sealed class Alert : AggregateRoot
     {
     }
 
-    private Alert(Guid id, long userId, string name, string url, TimeProvider timeProvider)
-    {
-        Id = id;
-        UserId = userId;
-        Name = name;
-        Url = Url.Create(url);
-        CreatedAt = timeProvider.GetUtcNow().UtcDateTime;
-        UpdatedAt = timeProvider.GetUtcNow().UtcDateTime;
-        IsActive = true;
-    }
-
     public Alert(Guid id, long userId, string name, string url, DateTime createdAt, DateTime? updatedAt,
         bool isActive = true, DateTime? lastSearchedAt = null)
     {
@@ -42,46 +31,46 @@ public sealed class Alert : AggregateRoot
         LastSearchedAt = lastSearchedAt;
     }
 
-    public static Alert Create(long userId, string name, string url, TimeProvider timeProvider)
+    public static Alert Create(long userId, string name, string url, DateTime createdAt, DateTime updatedAt)
     {
-        var alert = new Alert(Guid.NewGuid(), userId, name, url, timeProvider);
+        var alert = new Alert(Guid.NewGuid(), userId, name, url, createdAt, updatedAt);
 
         return alert;
     }
 
     public string GetCacheKey() => Id.ToString();
 
-    public void NewSearch(List<Item>? wallapopItems, TimeProvider timeProvider)
+    public void NewSearch(List<Item>? wallapopItems, DateTime eventTimestamp, DateTime searchTimestamp)
     {
         if (wallapopItems is not null && wallapopItems.Count > 0)
         {
-            Record(new NewItemsFoundEvent(Guid.NewGuid().ToString(), timeProvider.GetUtcNow().ToString("o"), Id,
+            Record(new NewItemsFoundEvent(Guid.NewGuid().ToString(), eventTimestamp.ToString("o"), Id,
                 UserId,
                 wallapopItems));
             
-            RecordSearch(timeProvider);
+            RecordSearch(searchTimestamp);
         }
     }
 
-    public void RecordSearch(TimeProvider timeProvider)
+    public void RecordSearch(DateTime timestamp)
     {
-        LastSearchedAt = timeProvider.GetUtcNow().UtcDateTime;
+        LastSearchedAt = timestamp;
     }
 
-    private void Touch(TimeProvider timeProvider)
+    private void Touch(DateTime timestamp)
     {
-        UpdatedAt = timeProvider.GetUtcNow().UtcDateTime;
+        UpdatedAt = timestamp;
     }
 
-    public void Deactivate(TimeProvider timeProvider)
+    public void Deactivate(DateTime timestamp)
     {
         IsActive = false;
-        Touch(timeProvider);
+        Touch(timestamp);
     }
 
-    public void Activate(TimeProvider timeProvider)
+    public void Activate(DateTime timestamp)
     {
         IsActive = true;
-        Touch(timeProvider);
+        Touch(timestamp);
     }
 }

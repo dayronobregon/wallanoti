@@ -62,10 +62,8 @@ public sealed class Notification(
     }
 
     public static Notification Create(Guid id, long userId, string title, string description, Price? price,
-        List<string>? images, string location, Url url, TimeProvider timeProvider)
+        List<string>? images, string location, Url url, DateTime createdAt)
     {
-        var now = timeProvider.GetUtcNow();
-
         var notification = new Notification(
             id,
             userId,
@@ -74,11 +72,11 @@ public sealed class Notification(
             location,
             price,
             url,
-            now.UtcDateTime,
+            createdAt,
             images);
 
         notification.Record(new NotificationCreatedEvent(notification.Id.ToString(),
-            now.ToString("o"), notification));
+            createdAt.ToString("o"), notification));
 
         return notification;
     }

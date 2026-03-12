@@ -4,13 +4,13 @@ namespace Wallanoti.Tests.Alerts._1_Domain;
 
 public class AlertLastSearchedAtTest
 {
-    private readonly TimeProvider _timeProvider = TimeProvider.System;
+    private readonly DateTime _createdAt = new(2024, 1, 15, 10, 0, 0, DateTimeKind.Utc);
 
     [Fact]
     public void Create_ShouldInitializeLastSearchedAtAsNull()
     {
         // Arrange & Act
-        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _timeProvider);
+        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _createdAt, _createdAt);
 
         // Assert
         Assert.Null(alert.LastSearchedAt);
@@ -22,53 +22,51 @@ public class AlertLastSearchedAtTest
     public void RecordSearch_ShouldUpdateLastSearchedAtAndUpdatedAt()
     {
         // Arrange
-        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _timeProvider);
-        var initialUpdatedAt = alert.UpdatedAt;
-        
-        Thread.Sleep(10); // Ensure time passes
+        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _createdAt, _createdAt);
+        var searchTime = _createdAt.AddMinutes(5);
 
         // Act
-        alert.RecordSearch(_timeProvider);
+        alert.RecordSearch(searchTime);
 
         // Assert
         Assert.NotNull(alert.LastSearchedAt);
-        Assert.True(alert.LastSearchedAt > initialUpdatedAt);
+        Assert.Equal(searchTime, alert.LastSearchedAt);
     }
 
     [Fact]
     public void RecordSearch_CalledMultipleTimes_ShouldUpdateToLatestTimestamp()
     {
         // Arrange
-        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _timeProvider);
-        
+        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _createdAt, _createdAt);
+        var firstSearch = _createdAt.AddMinutes(5);
+        var secondSearch = _createdAt.AddMinutes(10);
+
         // Act
-        alert.RecordSearch(_timeProvider);
-        var firstSearch = alert.LastSearchedAt;
-        
-        Thread.Sleep(10);
-        
-        alert.RecordSearch(_timeProvider);
-        var secondSearch = alert.LastSearchedAt;
+        alert.RecordSearch(firstSearch);
+        var firstResult = alert.LastSearchedAt;
+
+        alert.RecordSearch(secondSearch);
+        var secondResult = alert.LastSearchedAt;
 
         // Assert
-        Assert.NotNull(firstSearch);
-        Assert.NotNull(secondSearch);
-        Assert.True(secondSearch > firstSearch);
+        Assert.NotNull(firstResult);
+        Assert.NotNull(secondResult);
+        Assert.True(secondResult > firstResult);
     }
 
     [Fact]
     public void Deactivate_ShouldUpdateUpdatedAt_ButNotLastSearchedAt()
     {
         // Arrange
-        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _timeProvider);
-        alert.RecordSearch(_timeProvider);
+        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _createdAt, _createdAt);
+        var searchTime = _createdAt.AddMinutes(5);
+        alert.RecordSearch(searchTime);
         var lastSearchedAt = alert.LastSearchedAt;
         var initialUpdatedAt = alert.UpdatedAt;
-        
-        Thread.Sleep(10);
+        var deactivationTime = _createdAt.AddMinutes(10);
 
         // Act
-        alert.Deactivate(_timeProvider);
+        alert.Deactivate(deactivationTime);
 
         // Assert
         Assert.False(alert.IsActive);
@@ -81,15 +79,15 @@ public class AlertLastSearchedAtTest
     public void Activate_ShouldUpdateUpdatedAt_ButNotLastSearchedAt()
     {
         // Arrange
-        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _timeProvider);
-        alert.RecordSearch(_timeProvider);
+        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _createdAt, _createdAt);
+        var searchTime = _createdAt.AddMinutes(5);
+        alert.RecordSearch(searchTime);
         var lastSearchedAt = alert.LastSearchedAt;
-        alert.Deactivate(_timeProvider);
-        
-        Thread.Sleep(10);
+        alert.Deactivate(_createdAt.AddMinutes(10));
+        var activationTime = _createdAt.AddMinutes(15);
 
         // Act
-        alert.Activate(_timeProvider);
+        alert.Activate(activationTime);
 
         // Assert
         Assert.True(alert.IsActive);
@@ -101,7 +99,9 @@ public class AlertLastSearchedAtTest
     public void NewSearch_WithItems_ShouldRecordSearch()
     {
         // Arrange
-        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _timeProvider);
+        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _createdAt, _createdAt);
+        var eventTime = _createdAt.AddMinutes(5);
+        var searchTime = _createdAt.AddMinutes(5);
         var items = new List<Item>
         {
             new()
@@ -116,7 +116,7 @@ public class AlertLastSearchedAtTest
         };
 
         // Act
-        alert.NewSearch(items, _timeProvider);
+        alert.NewSearch(items, eventTime, searchTime);
 
         // Assert
         Assert.NotNull(alert.LastSearchedAt);
@@ -126,10 +126,12 @@ public class AlertLastSearchedAtTest
     public void NewSearch_WithNullItems_ShouldNotRecordSearch()
     {
         // Arrange
-        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _timeProvider);
+        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _createdAt, _createdAt);
+        var eventTime = _createdAt.AddMinutes(5);
+        var searchTime = _createdAt.AddMinutes(5);
 
         // Act
-        alert.NewSearch(null, _timeProvider);
+        alert.NewSearch(null, eventTime, searchTime);
 
         // Assert
         Assert.Null(alert.LastSearchedAt);
@@ -139,10 +141,12 @@ public class AlertLastSearchedAtTest
     public void NewSearch_WithEmptyList_ShouldNotRecordSearch()
     {
         // Arrange
-        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _timeProvider);
+        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _createdAt, _createdAt);
+        var eventTime = _createdAt.AddMinutes(5);
+        var searchTime = _createdAt.AddMinutes(5);
 
         // Act
-        alert.NewSearch(new List<Item>(), _timeProvider);
+        alert.NewSearch(new List<Item>(), eventTime, searchTime);
 
         // Assert
         Assert.Null(alert.LastSearchedAt);

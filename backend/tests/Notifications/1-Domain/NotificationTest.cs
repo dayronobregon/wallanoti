@@ -6,11 +6,11 @@ namespace Wallanoti.Tests.Notifications._1_Domain;
 
 public class NotificationTest
 {
-    private readonly TimeProvider _timeProvider;
+    private readonly DateTime _now;
 
     public NotificationTest()
     {
-        _timeProvider = TimeProvider.System;
+        _now = new DateTime(2024, 1, 15, 10, 30, 0, DateTimeKind.Utc);
     }
 
     [Fact]
@@ -19,7 +19,7 @@ public class NotificationTest
         var id = Guid.NewGuid();
         var url = Url.CreateFromSlug("item-slug");
         var notification = Notification.Create(id, 5, "title", "description", Price.Create(50, 60),
-            new List<string> { "img" }, "City, Region", url, _timeProvider);
+            new List<string> { "img" }, "City, Region", url, _now);
 
         Assert.Equal(id, notification.Id);
         Assert.Equal(5, notification.UserId);
@@ -37,7 +37,7 @@ public class NotificationTest
     public void FormattedString_ShouldIncludeKeyInformation()
     {
         var notification = Notification.Create(Guid.NewGuid(), 10, "Bike", "Great condition",
-            Price.Create(200, 250), new List<string>(), "Madrid", Url.CreateFromSlug("bike-slug"), _timeProvider);
+            Price.Create(200, 250), new List<string>(), "Madrid", Url.CreateFromSlug("bike-slug"), _now);
 
         var formatted = notification.FormattedString();
 
@@ -52,7 +52,7 @@ public class NotificationTest
     public void NotificationCreatedEvent_SystemTextJsonRoundtrip_ShouldPreservePriceAndUrl()
     {
         var notification = Notification.Create(Guid.NewGuid(), 10, "Bike", "Great condition",
-            Price.Create(200, 250), new List<string>(), "Madrid", Url.CreateFromSlug("bike-slug"), _timeProvider);
+            Price.Create(200, 250), new List<string>(), "Madrid", Url.CreateFromSlug("bike-slug"), _now);
         var createdEvent = new NotificationCreatedEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString("O"),
             notification);
 
@@ -99,7 +99,7 @@ public class NotificationTest
             [],
             "Madrid",
             Url.CreateFromSlug("bike-slug"),
-            _timeProvider);
+            _now);
 
         var formatted = notification.FormattedString();
 
