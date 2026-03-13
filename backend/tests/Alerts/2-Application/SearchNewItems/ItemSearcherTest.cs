@@ -10,6 +10,8 @@ using Wallanoti.Src.Alerts.Domain.Models;
 using Wallanoti.Src.Notifications.Domain;
 using Wallanoti.Src.Shared.Domain.Events;
 using Wallanoti.Src.Shared.Domain.ValueObjects;
+using Wallanoti.Src.Alerts.Domain.Repositories;
+using Wallanoti.Src.Alerts.Domain.Entities;
 
 namespace Wallanoti.Tests.Alerts._2_Application.SearchNewItems;
 
@@ -21,6 +23,7 @@ public class ItemSearcherTest
     private readonly IDistributedCache _cache;
     private readonly Mock<IEventBus> _eventBusMock = new();
     private readonly TimeProvider _timeProvider = TimeProvider.System;
+    private readonly Mock<IProcessedItemRepository> _processedItemRepositoryMock = new();
     private readonly ItemSearcher _sut;
 
     public ItemSearcherTest()
@@ -35,7 +38,6 @@ public class ItemSearcherTest
             .ReturnsAsync(1);
         _pushNotificationSenderMock.Setup(x => x.Notify(It.IsAny<long>(), It.IsAny<string>()))
             .Returns(Task.CompletedTask);
-        _cache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -49,8 +51,8 @@ public class ItemSearcherTest
             _wallapopRepositoryMock.Object,
             _pushNotificationSenderMock.Object,
             configuration,
-            _cache,
-            _timeProvider);
+            _timeProvider,
+            _processedItemRepositoryMock.Object);
     }
 
     [Fact]
@@ -70,11 +72,9 @@ public class ItemSearcherTest
         await _sut.Execute();
 
         _eventBusMock.Verify(x => x.Publish(It.Is<List<DomainEvent>>(events =>
-            events.OfType<NewItemsFoundEvent>().Single().Items!.Count() == items.Count &&
-            events.OfType<NewItemsFoundEvent>().Single().UserId == alert.UserId)), Times.Once);
+            events.OfType<ItemChangesFoundEvent>().Count() == items.Count)), Times.Once);
 
         _alertRepositoryMock.Verify(x => x.Update(alert), Times.Once);
-        Assert.NotNull(_cache.GetString(alert.GetCacheKey()));
     }
 
     [Fact]
@@ -102,7 +102,6 @@ public class ItemSearcherTest
         _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Never);
         Assert.NotNull(lastSearchedAt);
         Assert.Equal(lastSearchedAt, alert.LastSearchedAt);
-        Assert.Null(_cache.GetString(alert.GetCacheKey()));
     }
 
     [Fact]
@@ -119,7 +118,6 @@ public class ItemSearcherTest
 
         _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
         _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(items);
-        _cache.SetString(alert.GetCacheKey(), JsonSerializer.Serialize(new List<string> { cachedId }));
         _alertRepositoryMock
             .Setup(x => x.UpdateLastSearchedAt(alert.Id, It.IsAny<DateTime>()))
             .Callback<Guid, DateTime>((_, updatedAt) => lastSearchedAt = updatedAt)
@@ -132,7 +130,6 @@ public class ItemSearcherTest
         _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Never);
         Assert.NotNull(lastSearchedAt);
         Assert.Equal(lastSearchedAt, alert.LastSearchedAt);
-        Assert.NotNull(_cache.GetString(alert.GetCacheKey()));
     }
 
     [Fact]
@@ -152,6 +149,59 @@ public class ItemSearcherTest
                     message.Contains("InvalidOperationException: boom") &&
                     message.Contains(alert.Id.ToString()))),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task Execute_NewItemNoExistingProcessed_PublishesNewChangeEvent_Upserts()
+    {
+        // arrange
+        var alert = BuildAlert(DateTime.UtcNow.AddMinutes(-30), DateTime.UtcNow.AddMinutes(-20), DateTime.UtcNow.AddMinutes(-20));
+        var item = BuildItem("new-item", DateTime.UtcNow.AddMinutes(-10));
+        _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
+        _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(new List<Item> { item });
+        _processedItemRepositoryMock.Setup(x => x.GetByAlertAndItemAsync(alert.Id, item.Id)).ReturnsAsync((ProcessedItem?)null);
+        // act
+        await _sut.Execute();
+        // assert
+        _processedItemRepositoryMock.Verify(x => x.GetByAlertAndItemAsync(alert.Id, item.Id), Times.Once);
+        _processedItemRepositoryMock.Verify(x => x.UpsertAsync(It.IsAny<ProcessedItem>()), Times.Once);
+        _eventBusMock.Verify(x => x.Publish(It.Is<List<DomainEvent>>(evts => evts.OfType<ItemChangesFoundEvent>().Any(e => e.ChangeType == ChangeType.New))), Times.Once);
+        _alertRepositoryMock.Verify(x => x.Update(alert), Times.Once);
+    }
+
+    [Fact]
+    public async Task Execute_PriceDropExistingProcessed_PublishesPriceDropEvent_UpdatesUpserts()
+    {
+        // arrange
+        var alert = BuildAlert(DateTime.UtcNow.AddMinutes(-30));
+        var item = BuildItem("item1", DateTime.UtcNow.AddMinutes(-10));
+        item.Price = Price.Create(150, null);
+        var existingProcessed = new ProcessedItem(alert.Id, item.Id, item.ModifiedAt, Price.Create(200, null));
+        _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
+        _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(new List<Item> { item });
+        _processedItemRepositoryMock.Setup(x => x.GetByAlertAndItemAsync(alert.Id, item.Id)).ReturnsAsync(existingProcessed);
+        // act
+        await _sut.Execute();
+        // assert
+        _processedItemRepositoryMock.Verify(x => x.UpsertAsync(It.Is<ProcessedItem>(p => p.LastPrice.CurrentPrice == 150)), Times.Once);
+        _eventBusMock.Verify(x => x.Publish(It.Is<List<DomainEvent>>(evts => evts.OfType<ItemChangesFoundEvent>().Any(e => e.ChangeType == ChangeType.PriceDrop))), Times.Once);
+    }
+
+    [Fact]
+    public async Task Execute_NoChangeExistingProcessed_NoPublish_UpsertLastSearched()
+    {
+        // arrange
+        var alert = BuildAlert(DateTime.UtcNow.AddMinutes(-30));
+        var item = BuildItem("item1", DateTime.UtcNow.AddMinutes(-10));
+        var existingProcessed = new ProcessedItem(alert.Id, item.Id, item.ModifiedAt, item.Price!);
+        _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
+        _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(new List<Item> { item });
+        _processedItemRepositoryMock.Setup(x => x.GetByAlertAndItemAsync(alert.Id, item.Id)).ReturnsAsync(existingProcessed);
+        // act
+        await _sut.Execute();
+        // assert
+        _eventBusMock.Verify(x => x.Publish(It.IsAny<List<DomainEvent>>()), Times.Never);
+        _alertRepositoryMock.Verify(x => x.UpdateLastSearchedAt(alert.Id, It.IsAny<DateTime>()), Times.Once);
     }
 
     private static Alert BuildAlert(DateTime createdAt, DateTime? updatedAt = null, DateTime? lastSearchedAt = null, bool isActive = true)

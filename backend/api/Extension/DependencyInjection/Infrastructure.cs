@@ -18,7 +18,8 @@ using Wallanoti.Src.Shared.Infrastructure.Events.MassTransit;
 using Wallanoti.Src.Shared.Infrastructure.Percistence.EntityFramework;
 using Wallanoti.Src.Users.Domain.Events;
 using Wallanoti.Src.Users.Domain.Repositories;
-using Wallanoti.Src.Users.Infrastructure.Percistence;
+using Wallanoti.Src.Alerts.Domain.Repositories;
+using Wallanoti.Src.Alerts.Infrastructure.Percistence.Repositories;
 
 namespace Wallanoti.Api.Extension.DependencyInjection;
 

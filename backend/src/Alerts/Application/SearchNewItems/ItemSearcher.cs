@@ -6,6 +6,9 @@ using Wallanoti.Src.Alerts.Domain;
 using Wallanoti.Src.Alerts.Domain.Models;
 using Wallanoti.Src.Notifications.Domain;
 using Wallanoti.Src.Shared.Domain.Events;
+using Wallanoti.Src.Alerts.Domain.Repositories;
+using Wallanoti.Src.Alerts.Domain.Entities;
+using System.Linq;
 
 namespace Wallanoti.Src.Alerts.Application.SearchNewItems;
 
@@ -16,7 +19,7 @@ public sealed class ItemSearcher
     private readonly IWallapopRepository _wallapopRepository;
     private readonly IPushNotificationSender _pushNotificationSender;
     private readonly long? _ownerChatId;
-    private readonly IDistributedCache _cache;
+    private readonly IProcessedItemRepository _processedItemRepository;
     private readonly TimeProvider _timeProvider;
 
     public ItemSearcher(
@@ -24,8 +27,8 @@ public sealed class ItemSearcher
         IWallapopRepository wallapopRepository,
         IPushNotificationSender pushNotificationSender,
         IConfiguration configuration,
-        IDistributedCache cache,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        IProcessedItemRepository processedItemRepository)
     {
         _eventBus = eventBus;
         _alertRepository = alertRepository;
@@ -34,8 +37,8 @@ public sealed class ItemSearcher
         _ownerChatId = long.TryParse(configuration["Notifications:OwnerChatId"], out var ownerChatId)
             ? ownerChatId
             : null;
-        _cache = cache;
         _timeProvider = timeProvider;
+        _processedItemRepository = processedItemRepository;
     }
 
     public async Task Execute()
@@ -67,45 +70,60 @@ public sealed class ItemSearcher
                 continue;
             }
 
-            var cachedItems = GetCachedItems(alert.GetCacheKey());
+            var candidateItems = wallapopItems
+                .Where(item => DateTimeOffset.FromUnixTimeMilliseconds(item.CreatedAt).DateTime.CompareTo(alert.CreatedAt) >= 0)
+                .ToList();
 
-            var newItems = (from item in wallapopItems
-                let itemCreatedAt = DateTimeOffset.FromUnixTimeMilliseconds(item.CreatedAt).DateTime
-                where itemCreatedAt.CompareTo(alert.CreatedAt) >= 0 &&
-                      !AlreadyFound(cachedItems, item.Id)
-                select item).ToList();
+            var events = new List<DomainEvent>();
+            var changedItems = new List<Item>();
+            var now = _timeProvider.GetUtcNow();
 
-            var now = _timeProvider.GetUtcNow().UtcDateTime;
-
-            if (newItems.Count == 0)
+            foreach (var item in candidateItems)
             {
-                alert.RecordSearch(now);
-                await _alertRepository.UpdateLastSearchedAt(alert.Id, alert.LastSearchedAt!.Value);
-                continue;
+                var existingProcessed = await _processedItemRepository.GetByAlertAndItemAsync(alert.Id, item.Id);
+                ProcessedItem processed;
+                if (existingProcessed is null)
+                {
+                    processed = new ProcessedItem(alert.Id, item.Id, item.ModifiedAt, item.Price!);
+                    var changeEvent = new ItemChangesFoundEvent(
+                        Guid.NewGuid().ToString(),
+                        now.ToString("O"),
+                        alert.Id,
+                        item.Id,
+                        ChangeType.New,
+                        item);
+                    events.Add(changeEvent);
+                    changedItems.Add(item);
+                }
+                else
+                {
+                    existingProcessed.UpdateFrom(item);
+                    var pulledEvents = existingProcessed.PullDomainEvents();
+                    if (pulledEvents.Any())
+                    {
+                        events.AddRange(pulledEvents);
+                        changedItems.Add(item);
+                    }
+                    processed = existingProcessed;
+                }
+                await _processedItemRepository.UpsertAsync(processed);
             }
 
-            //Añadir una nueva busqueda con los nuevos items encontrados
-            alert.NewSearch(newItems, now, now);
-
-            //Guardar en cache los ids de los items encontrados
-            await _cache.SetAsync(alert.GetCacheKey(),
-                Encoding.UTF8.GetBytes(JsonSerializer.Serialize(wallapopItems.Select(x => x.Id))));
-
-            await _alertRepository.Update(alert);
-
-            await _eventBus.Publish(alert.PullDomainEvents());
+            if (changedItems.Any())
+            {
+                alert.NewSearch(changedItems, now.UtcDateTime, now.UtcDateTime);
+                await _alertRepository.Update(alert);
+                await _eventBus.Publish(events);
+            }
+            else
+            {
+                alert.RecordSearch(now.UtcDateTime);
+                await _alertRepository.UpdateLastSearchedAt(alert.Id, now.UtcDateTime);
+            }
         }
     }
 
-    private static bool AlreadyFound(List<string> elementsInCache, string wallapopItemId)
-    {
-        return elementsInCache.Count != 0 && elementsInCache.Contains(wallapopItemId);
-    }
 
-    private List<string> GetCachedItems(string alertId)
-    {
-        var cached = _cache.GetString(alertId);
 
-        return cached is null ? [] : JsonSerializer.Deserialize<List<string>>(cached) ?? [];
-    }
+
 }

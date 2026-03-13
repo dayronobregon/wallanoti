@@ -107,4 +107,28 @@ public class NotificationTest
         Assert.Contains("<b>Price:</b> 200", formatted);
         Assert.Contains("<b>Previous price:</b> 250", formatted);
     }
+
+    [Fact]
+    public void FormattedString_NewPrefix()
+    {
+        var notification = Notification.Create(Guid.NewGuid(), 10, "Test", "desc", Price.Create(100, null), [], "loc", Url.CreateFromSlug("slug"), _now, ChangeType.New);
+        var f = notification.FormattedString();
+        Assert.Contains("<b>Nuevo</b>", f);
+    }
+
+    [Fact]
+    public void FormattedString_UpdatePrefix()
+    {
+        var notification = Notification.Create(Guid.NewGuid(), 10, "Test", "desc", Price.Create(100, null), [], "loc", Url.CreateFromSlug("slug"), _now, ChangeType.Update);
+        var f = notification.FormattedString();
+        Assert.Contains("<b>Actualizacion</b>", f);
+    }
+
+    [Fact]
+    public void FormattedString_PriceDropPrefix()
+    {
+        var notification = Notification.Create(Guid.NewGuid(), 10, "Test", "desc", Price.Create(100, 150), [], "loc", Url.CreateFromSlug("slug"), _now, ChangeType.PriceDrop);
+        var f = notification.FormattedString();
+        Assert.Contains("<b>Bajada Precio</b>", f);
+    }
 }

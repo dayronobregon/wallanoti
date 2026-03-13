@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using Wallanoti.Src.Shared.Domain.Events;
 using Wallanoti.Src.Shared.Domain.ValueObjects;
+using Wallanoti.Src.Alerts.Domain;
 
 namespace Wallanoti.Src.Notifications.Domain;
 
@@ -15,7 +16,8 @@ public sealed class Notification(
     Price? price,
     Url url,
     DateTime createdAt,
-    List<string>? images = null)
+    List<string>? images = null,
+    ChangeType changeType = ChangeType.None)
     : AggregateRoot
 {
     public Guid Id { get; } = id;
@@ -27,10 +29,21 @@ public sealed class Notification(
     public Url Url { get; } = url;
     public List<string>? Images { get; } = images;
     public DateTime CreatedAt { get; } = createdAt;
+    public ChangeType ChangeType { get; } = changeType;
 
     public string FormattedString()
     {
         var message = new StringBuilder();
+
+        var prefix = ChangeType switch
+        {
+            ChangeType.New => "<b>Nuevo</b>\n",
+            ChangeType.Update => "<b>Actualizacion</b>\n",
+            ChangeType.PriceDrop => "<b>Bajada Precio</b>\n",
+            _ => ""
+        };
+        message.Append(prefix);
+
         var safeTitle = string.IsNullOrWhiteSpace(Title) ? "Notification" : Title;
         var safeDescription = string.IsNullOrWhiteSpace(Description) ? "No description" : Description;
         var safePrice = Price is null
@@ -61,9 +74,10 @@ public sealed class Notification(
         return message.ToString();
     }
 
-    public static Notification Create(Guid id, long userId, string title, string description, Price? price,
-        List<string>? images, string location, Url url, DateTime createdAt)
-    {
+public static Notification Create(Guid id, long userId, string title, string description, Price? price,
+    List<string>? images, string location, Url url, DateTime createdAt, ChangeType changeType = ChangeType.None)
+{
+
         var notification = new Notification(
             id,
             userId,
@@ -73,7 +87,8 @@ public sealed class Notification(
             price,
             url,
             createdAt,
-            images);
+            images,
+            changeType);
 
         notification.Record(new NotificationCreatedEvent(notification.Id.ToString(),
             createdAt.ToString("o"), notification));
