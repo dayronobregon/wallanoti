@@ -3,6 +3,7 @@ using Wallanoti.Src.Alerts.Domain;
 using Wallanoti.Src.Alerts.Domain.Models;
 using Wallanoti.Src.Notifications.Application.SaveOnNewItemsFound;
 using Wallanoti.Src.Notifications.Domain;
+using Wallanoti.Src.Notifications.Domain.Models;
 using Wallanoti.Src.Shared.Domain.Events;
 using Wallanoti.Src.Shared.Domain.ValueObjects;
 
@@ -19,6 +20,9 @@ public class SaveNotificationOnNewItemsFoundTest
     {
         _repositoryMock.Setup(x => x.AddRangeAsync(It.IsAny<IEnumerable<Notification>>()))
             .Returns(Task.CompletedTask);
+        _repositoryMock
+            .Setup(x => x.GetLatestByUserAndUrls(It.IsAny<long>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, LastNotifiedItemSnapshot>());
         _eventBusMock.Setup(x => x.Publish(It.IsAny<List<DomainEvent>>()))
             .Returns(Task.CompletedTask);
         _sut = new SaveNotificationOnNewItemsFound(_repositoryMock.Object, _eventBusMock.Object, _timeProvider);
@@ -51,7 +55,33 @@ public class SaveNotificationOnNewItemsFoundTest
         _eventBusMock.Verify(x => x.Publish(It.Is<List<DomainEvent>>(events => events.Count == 0)), Times.Once);
     }
 
-    private static Item BuildItem(string slug)
+    [Fact]
+    public async Task Handle_WithPriceDropItem_ShouldPersistNotificationWithPriceDropTitleAndUpdatedPrice()
+    {
+        var item = BuildItem("price-drop", currentPrice: 15, previousPrice: 20);
+        var itemUrl = Url.CreateFromSlug(item.WebSlug).Value;
+
+        _repositoryMock
+            .Setup(x => x.GetLatestByUserAndUrls(7, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, LastNotifiedItemSnapshot>
+            {
+                [itemUrl] = new(itemUrl, 20, DateTime.UtcNow.AddMinutes(-10))
+            });
+
+        var @event = new NewItemsFoundEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString("o"), Guid.NewGuid(), 7,
+            [item]);
+
+        await _sut.Handle(@event);
+
+        _repositoryMock.Verify(x => x.AddRangeAsync(It.Is<IEnumerable<Notification>>(notifications =>
+            notifications.Count() == 1 &&
+            notifications.First().Title == "item-price-drop (Baja de Precio)" &&
+            notifications.First().Price != null &&
+            notifications.First().Price!.CurrentPrice == 15
+        )), Times.Once);
+    }
+
+    private static Item BuildItem(string slug, double currentPrice = 20, double? previousPrice = 25)
     {
         return new Item
         {
@@ -60,7 +90,7 @@ public class SaveNotificationOnNewItemsFoundTest
             Title = $"item-{slug}",
             Description = "desc",
             CategoryId = 1,
-            Price = Price.Create(20, 25),
+            Price = Price.Create(currentPrice, previousPrice),
             Images = new List<string>(),
             Location = Location.Create("City", "Region"),
             Shipping = false,

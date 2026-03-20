@@ -18,6 +18,8 @@ public sealed class NotificationConfiguration : IEntityTypeConfiguration<Notific
         builder.HasOne<User>()
             .WithOne()
             .HasForeignKey<NotificationEntity>(x => x.UserId);
+
+        builder.HasIndex(x => new { x.UserId, x.Url, x.CreatedAt });
         
         builder.Property(x => x.CreatedAt)
             .HasConversion(dateTime => dateTime, dateTime => DateTime.SpecifyKind(dateTime, DateTimeKind.Utc));
