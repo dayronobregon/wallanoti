@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Wallanoti.Src.Notifications.Domain;
-using Wallanoti.Src.Notifications.Domain.Models;
 using Wallanoti.Src.Shared.Domain.ValueObjects;
 using Wallanoti.Src.Shared.Infrastructure.Percistence.EntityFramework;
 using Wallanoti.Src.Shared.Infrastructure.Percistence.EntityFramework.EntityModels;
@@ -80,30 +79,4 @@ public sealed class NotificationRepository : INotificationRepository
         return notifications;
     }
 
-    public async Task<IReadOnlyDictionary<string, LastNotifiedItemSnapshot>> GetLatestByUserAndUrls(
-        long userId,
-        IReadOnlyCollection<string> urls,
-        CancellationToken cancellationToken = default)
-    {
-        if (urls.Count == 0)
-        {
-            return new Dictionary<string, LastNotifiedItemSnapshot>();
-        }
-
-        var candidateUrls = urls.Distinct().ToArray();
-
-        var snapshots = await _dbContext.Notifications
-            .Where(notification => notification.UserId == userId && candidateUrls.Contains(notification.Url))
-            .GroupBy(notification => notification.Url)
-            .Select(group => group
-                .OrderByDescending(notification => notification.CreatedAt)
-                .Select(notification => new LastNotifiedItemSnapshot(
-                    notification.Url,
-                    notification.CurrentPrice,
-                    notification.CreatedAt))
-                .First())
-            .ToListAsync(cancellationToken);
-
-        return snapshots.ToDictionary(snapshot => snapshot.Url, StringComparer.Ordinal);
-    }
 }

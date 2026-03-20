@@ -1,7 +1,6 @@
 using Wallanoti.Src.Alerts.Domain;
 using Wallanoti.Src.Alerts.Domain.Models;
 using Wallanoti.Src.Notifications.Domain;
-using Wallanoti.Src.Notifications.Domain.Models;
 using Wallanoti.Src.Shared.Domain.Events;
 using Wallanoti.Src.Shared.Domain.ValueObjects;
 
@@ -27,14 +26,13 @@ public sealed class SaveNotificationOnNewItemsFound : IDomainEventHandler<NewIte
         var notifications = new List<Notification>();
         var events = new List<DomainEvent>();
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-        var snapshotsByUrl = await GetLatestSnapshotsByUrl(@event.UserId, items);
         
         foreach (var item in items)
         {
             var notification = Notification.Create(
                 Guid.NewGuid(),
                 @event.UserId,
-                BuildNotificationTitle(item, snapshotsByUrl),
+                BuildNotificationTitle(item),
                 item.Description,
                 item.Price,
                 item.Images,
@@ -52,31 +50,10 @@ public sealed class SaveNotificationOnNewItemsFound : IDomainEventHandler<NewIte
         await _eventBus.Publish(events);
     }
 
-    private async Task<IReadOnlyDictionary<string, LastNotifiedItemSnapshot>> GetLatestSnapshotsByUrl(
-        long userId,
-        IReadOnlyCollection<Item> items)
-    {
-        if (items.Count == 0)
-        {
-            return new Dictionary<string, LastNotifiedItemSnapshot>();
-        }
-
-        var urls = items
-            .Select(item => Url.CreateFromSlug(item.WebSlug).Value)
-            .Distinct()
-            .ToArray();
-
-        return await _notificationRepository.GetLatestByUserAndUrls(userId, urls);
-    }
-
     private static string BuildNotificationTitle(
-        Item item,
-        IReadOnlyDictionary<string, LastNotifiedItemSnapshot> snapshotsByUrl)
+        Item item)
     {
-        var url = Url.CreateFromSlug(item.WebSlug).Value;
-        var isPriceDrop = item.Price is not null &&
-                          snapshotsByUrl.TryGetValue(url, out var snapshot) &&
-                          item.Price.CurrentPrice < snapshot.LastNotifiedCurrentPrice;
+        var isPriceDrop = item.Price?.PreviousPrice is not null && item.Price.PreviousPrice.Value > item.Price.CurrentPrice;
 
         return isPriceDrop ? $"{item.Title} {PriceDropSuffix}" : item.Title;
     }

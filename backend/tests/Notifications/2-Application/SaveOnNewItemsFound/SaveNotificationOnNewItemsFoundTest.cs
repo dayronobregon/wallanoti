@@ -3,7 +3,6 @@ using Wallanoti.Src.Alerts.Domain;
 using Wallanoti.Src.Alerts.Domain.Models;
 using Wallanoti.Src.Notifications.Application.SaveOnNewItemsFound;
 using Wallanoti.Src.Notifications.Domain;
-using Wallanoti.Src.Notifications.Domain.Models;
 using Wallanoti.Src.Shared.Domain.Events;
 using Wallanoti.Src.Shared.Domain.ValueObjects;
 
@@ -20,9 +19,6 @@ public class SaveNotificationOnNewItemsFoundTest
     {
         _repositoryMock.Setup(x => x.AddRangeAsync(It.IsAny<IEnumerable<Notification>>()))
             .Returns(Task.CompletedTask);
-        _repositoryMock
-            .Setup(x => x.GetLatestByUserAndUrls(It.IsAny<long>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<string, LastNotifiedItemSnapshot>());
         _eventBusMock.Setup(x => x.Publish(It.IsAny<List<DomainEvent>>()))
             .Returns(Task.CompletedTask);
         _sut = new SaveNotificationOnNewItemsFound(_repositoryMock.Object, _eventBusMock.Object, _timeProvider);
@@ -59,14 +55,6 @@ public class SaveNotificationOnNewItemsFoundTest
     public async Task Handle_WithPriceDropItem_ShouldPersistNotificationWithPriceDropTitleAndUpdatedPrice()
     {
         var item = BuildItem("price-drop", currentPrice: 15, previousPrice: 20);
-        var itemUrl = Url.CreateFromSlug(item.WebSlug).Value;
-
-        _repositoryMock
-            .Setup(x => x.GetLatestByUserAndUrls(7, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<string, LastNotifiedItemSnapshot>
-            {
-                [itemUrl] = new(itemUrl, 20, DateTime.UtcNow.AddMinutes(-10))
-            });
 
         var @event = new NewItemsFoundEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString("o"), Guid.NewGuid(), 7,
             [item]);

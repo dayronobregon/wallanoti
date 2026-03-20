@@ -8,7 +8,6 @@ using Wallanoti.Src.Alerts.Application.SearchNewItems;
 using Wallanoti.Src.Alerts.Domain;
 using Wallanoti.Src.Alerts.Domain.Models;
 using Wallanoti.Src.Notifications.Domain;
-using Wallanoti.Src.Notifications.Domain.Models;
 using Wallanoti.Src.Shared.Domain.Events;
 using Wallanoti.Src.Shared.Domain.ValueObjects;
 
@@ -18,7 +17,6 @@ public class ItemSearcherTest
 {
     private readonly Mock<IAlertRepository> _alertRepositoryMock = new();
     private readonly Mock<IWallapopRepository> _wallapopRepositoryMock = new();
-    private readonly Mock<INotificationRepository> _notificationRepositoryMock = new();
     private readonly Mock<IPushNotificationSender> _pushNotificationSenderMock = new();
     private readonly IDistributedCache _cache;
     private readonly Mock<IEventBus> _eventBusMock = new();
@@ -29,9 +27,6 @@ public class ItemSearcherTest
     {
         _eventBusMock.Setup(x => x.Publish(It.IsAny<List<DomainEvent>>()))
             .Returns(Task.CompletedTask);
-        _notificationRepositoryMock
-            .Setup(x => x.GetLatestByUserAndUrls(It.IsAny<long>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<string, LastNotifiedItemSnapshot>());
         _alertRepositoryMock.Setup(x => x.Update(It.IsAny<Alert>()))
             .Returns(Task.CompletedTask);
         _alertRepositoryMock.Setup(x => x.TouchAlert(It.IsAny<Guid>(), It.IsAny<DateTime>()))
@@ -52,7 +47,6 @@ public class ItemSearcherTest
             _eventBusMock.Object,
             _alertRepositoryMock.Object,
             _wallapopRepositoryMock.Object,
-            _notificationRepositoryMock.Object,
             _pushNotificationSenderMock.Object,
             configuration,
             _cache,
@@ -75,20 +69,17 @@ public class ItemSearcherTest
             BuildItem("item-cached", "cached", now.AddMinutes(5), 99)
         };
         _cache.SetString(alert.GetCacheKey(), JsonSerializer.Serialize(new List<string> { "item-cached" }));
-
-        var snapshots = new Dictionary<string, LastNotifiedItemSnapshot>
+        _cache.SetString(GetPriceCacheKey(alert.GetCacheKey()), JsonSerializer.Serialize(new Dictionary<string, double>
         {
-            ["https://es.wallapop.com/item/price-drop"] = new("https://es.wallapop.com/item/price-drop", 100, now.AddHours(-1)),
-            ["https://es.wallapop.com/item/no-drop"] = new("https://es.wallapop.com/item/no-drop", 100, now.AddHours(-1)),
-            ["https://es.wallapop.com/item/higher-price"] = new("https://es.wallapop.com/item/higher-price", 140, now.AddHours(-1)),
-            ["https://es.wallapop.com/item/null-price"] = new("https://es.wallapop.com/item/null-price", 110, now.AddHours(-1))
-        };
+            ["item-price-drop"] = 100,
+            ["item-no-drop"] = 100,
+            ["item-higher-price"] = 140,
+            ["item-null-price"] = 110,
+            ["item-cached"] = 99
+        }));
 
         _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
         _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(items);
-        _notificationRepositoryMock
-            .Setup(x => x.GetLatestByUserAndUrls(alert.UserId, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(snapshots);
 
         await _sut.Execute();
 
@@ -97,23 +88,19 @@ public class ItemSearcherTest
             events.OfType<NewItemsFoundEvent>().Single().Items!.Select(i => i.Id).OrderBy(x => x)
                 .SequenceEqual(new[] { "item-first-time", "item-price-drop" }.OrderBy(x => x)))), Times.Once);
 
-        _notificationRepositoryMock.Verify(x => x.GetLatestByUserAndUrls(
-            alert.UserId,
-            It.Is<IReadOnlyCollection<string>>(urls =>
-                urls.Count == 5 &&
-                urls.Contains("https://es.wallapop.com/item/first-time") &&
-                urls.Contains("https://es.wallapop.com/item/price-drop") &&
-                urls.Contains("https://es.wallapop.com/item/no-drop") &&
-                urls.Contains("https://es.wallapop.com/item/higher-price") &&
-                urls.Contains("https://es.wallapop.com/item/null-price")),
-            It.IsAny<CancellationToken>()), Times.Once);
-
         _alertRepositoryMock.Verify(x => x.Update(alert), Times.Once);
         Assert.NotNull(_cache.GetString(alert.GetCacheKey()));
+
+        var priceCache = JsonSerializer.Deserialize<Dictionary<string, double>>(
+            _cache.GetString(GetPriceCacheKey(alert.GetCacheKey()))!);
+        Assert.NotNull(priceCache);
+        Assert.Equal(80, priceCache!["item-price-drop"]);
+        Assert.Equal(150, priceCache["item-higher-price"]);
+        Assert.Equal(99, priceCache["item-cached"]);
     }
 
     [Fact]
-    public async Task Execute_WhenNoNewItems_DoesNotPublishOrCache_ButUpdatesLastSearchedAt()
+    public async Task Execute_WhenNoNewItems_DoesNotPublish_ButUpdatesLastSearchedAtAndCache()
     {
         var now = DateTime.UtcNow;
         var alert = BuildAlert(now, now, now);
@@ -137,7 +124,11 @@ public class ItemSearcherTest
         _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Never);
         Assert.NotNull(lastSearchedAt);
         Assert.Equal(lastSearchedAt, alert.LastSearchedAt);
-        Assert.Null(_cache.GetString(alert.GetCacheKey()));
+        Assert.NotNull(_cache.GetString(alert.GetCacheKey()));
+        var priceCache = JsonSerializer.Deserialize<Dictionary<string, double>>(
+            _cache.GetString(GetPriceCacheKey(alert.GetCacheKey()))!);
+        Assert.NotNull(priceCache);
+        Assert.Equal(10, priceCache!["item-1"]);
     }
 
     [Fact]
@@ -163,7 +154,6 @@ public class ItemSearcherTest
         await _sut.Execute();
 
         _eventBusMock.Verify(x => x.Publish(It.IsAny<List<DomainEvent>>()), Times.Never);
-        _notificationRepositoryMock.Verify(x => x.GetLatestByUserAndUrls(It.IsAny<long>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()), Times.Never);
         _alertRepositoryMock.Verify(x => x.UpdateLastSearchedAt(alert.Id, It.IsAny<DateTime>()), Times.Once);
         _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Never);
         Assert.NotNull(lastSearchedAt);
@@ -215,5 +205,10 @@ public class ItemSearcherTest
             CreatedAt = new DateTimeOffset(createdAt).ToUnixTimeMilliseconds(),
             ModifiedAt = new DateTimeOffset(modifiedAt ?? createdAt).ToUnixTimeMilliseconds()
         };
+    }
+
+    private static string GetPriceCacheKey(string alertCacheKey)
+    {
+        return $"{alertCacheKey}:prices";
     }
 }

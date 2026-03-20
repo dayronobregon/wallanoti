@@ -5,7 +5,6 @@ using Microsoft.Extensions.Configuration;
 using Wallanoti.Src.Alerts.Domain;
 using Wallanoti.Src.Alerts.Domain.Models;
 using Wallanoti.Src.Notifications.Domain;
-using Wallanoti.Src.Notifications.Domain.Models;
 using Wallanoti.Src.Shared.Domain.Events;
 using Wallanoti.Src.Shared.Domain.ValueObjects;
 
@@ -16,7 +15,6 @@ public sealed class ItemSearcher
     private readonly IEventBus _eventBus;
     private readonly IAlertRepository _alertRepository;
     private readonly IWallapopRepository _wallapopRepository;
-    private readonly INotificationRepository _notificationRepository;
     private readonly IPushNotificationSender _pushNotificationSender;
     private readonly long? _ownerChatId;
     private readonly IDistributedCache _cache;
@@ -25,7 +23,6 @@ public sealed class ItemSearcher
     public ItemSearcher(
         IEventBus eventBus, IAlertRepository alertRepository,
         IWallapopRepository wallapopRepository,
-        INotificationRepository notificationRepository,
         IPushNotificationSender pushNotificationSender,
         IConfiguration configuration,
         IDistributedCache cache,
@@ -34,7 +31,6 @@ public sealed class ItemSearcher
         _eventBus = eventBus;
         _alertRepository = alertRepository;
         _wallapopRepository = wallapopRepository;
-        _notificationRepository = notificationRepository;
         _pushNotificationSender = pushNotificationSender;
         _ownerChatId = long.TryParse(configuration["Notifications:OwnerChatId"], out var ownerChatId)
             ? ownerChatId
@@ -72,7 +68,9 @@ public sealed class ItemSearcher
                 continue;
             }
 
-            var cachedItems = GetCachedItems(alert.GetCacheKey());
+            var cacheKey = alert.GetCacheKey();
+            var cachedItems = GetCachedItems(cacheKey);
+            var cachedPrices = GetCachedPrices(cacheKey);
 
             var nonCachedItems = (from item in wallapopItems
                 let itemCreatedAt = DateTimeOffset.FromUnixTimeMilliseconds(item.CreatedAt).DateTime
@@ -80,10 +78,12 @@ public sealed class ItemSearcher
                       !AlreadyFound(cachedItems, item.Id)
                 select item).ToList();
 
-            var snapshots = await GetLatestSnapshots(alert.UserId, nonCachedItems);
             var newItems = nonCachedItems
-                .Where(item => IsEligible(item, snapshots))
+                .Where(item => IsEligible(item, cachedPrices))
                 .ToList();
+
+            UpdateCacheWithLatestItems(cachedItems, cachedPrices, wallapopItems);
+            await SaveCache(cacheKey, cachedItems, cachedPrices);
 
             var now = _timeProvider.GetUtcNow().UtcDateTime;
 
@@ -97,41 +97,20 @@ public sealed class ItemSearcher
             //Añadir una nueva busqueda con los nuevos items encontrados
             alert.NewSearch(newItems, now, now);
 
-            //Guardar en cache los ids de los items encontrados
-            await _cache.SetAsync(alert.GetCacheKey(),
-                Encoding.UTF8.GetBytes(JsonSerializer.Serialize(wallapopItems.Select(x => x.Id))));
-
             await _alertRepository.Update(alert);
 
             await _eventBus.Publish(alert.PullDomainEvents());
         }
     }
 
-    private static bool AlreadyFound(List<string> elementsInCache, string wallapopItemId)
+    private static bool AlreadyFound(HashSet<string> elementsInCache, string wallapopItemId)
     {
-        return elementsInCache.Count != 0 && elementsInCache.Contains(wallapopItemId);
+        return elementsInCache.Contains(wallapopItemId);
     }
 
-    private async Task<IReadOnlyDictionary<string, LastNotifiedItemSnapshot>> GetLatestSnapshots(long userId, List<Item> items)
+    private static bool IsEligible(Item item, IReadOnlyDictionary<string, double> cachedPricesByItemId)
     {
-        if (items.Count == 0)
-        {
-            return new Dictionary<string, LastNotifiedItemSnapshot>();
-        }
-
-        var urls = items
-            .Select(item => Url.CreateFromSlug(item.WebSlug).Value)
-            .Distinct()
-            .ToArray();
-
-        return await _notificationRepository.GetLatestByUserAndUrls(userId, urls);
-    }
-
-    private static bool IsEligible(Item item, IReadOnlyDictionary<string, LastNotifiedItemSnapshot> snapshotsByUrl)
-    {
-        var url = Url.CreateFromSlug(item.WebSlug).Value;
-
-        if (!snapshotsByUrl.TryGetValue(url, out var snapshot))
+        if (!cachedPricesByItemId.TryGetValue(item.Id, out var cachedPrice))
         {
             return true;
         }
@@ -141,13 +120,64 @@ public sealed class ItemSearcher
             return false;
         }
 
-        return item.Price.CurrentPrice < snapshot.LastNotifiedCurrentPrice;
+        var isPriceDrop = item.Price.CurrentPrice < cachedPrice;
+
+        if (isPriceDrop)
+        {
+            item.Price = Price.Create(item.Price.CurrentPrice, cachedPrice);
+        }
+
+        return isPriceDrop;
     }
 
-    private List<string> GetCachedItems(string alertId)
+    private HashSet<string> GetCachedItems(string alertId)
     {
         var cached = _cache.GetString(alertId);
 
-        return cached is null ? [] : JsonSerializer.Deserialize<List<string>>(cached) ?? [];
+        if (cached is null)
+        {
+            return [];
+        }
+
+        var ids = JsonSerializer.Deserialize<List<string>>(cached) ?? [];
+        return ids.ToHashSet(StringComparer.Ordinal);
+    }
+
+    private Dictionary<string, double> GetCachedPrices(string alertId)
+    {
+        var cached = _cache.GetString(GetPriceCacheKey(alertId));
+
+        return cached is null
+            ? []
+            : JsonSerializer.Deserialize<Dictionary<string, double>>(cached) ?? [];
+    }
+
+    private static void UpdateCacheWithLatestItems(
+        ISet<string> cachedItems,
+        IDictionary<string, double> cachedPrices,
+        IReadOnlyCollection<Item> wallapopItems)
+    {
+        foreach (var item in wallapopItems)
+        {
+            cachedItems.Add(item.Id);
+
+            if (item.Price is null)
+            {
+                continue;
+            }
+
+            cachedPrices[item.Id] = item.Price.CurrentPrice;
+        }
+    }
+
+    private async Task SaveCache(string alertId, IReadOnlyCollection<string> itemIds, IReadOnlyDictionary<string, double> pricesByItemId)
+    {
+        await _cache.SetStringAsync(alertId, JsonSerializer.Serialize(itemIds));
+        await _cache.SetStringAsync(GetPriceCacheKey(alertId), JsonSerializer.Serialize(pricesByItemId));
+    }
+
+    private static string GetPriceCacheKey(string alertId)
+    {
+        return $"{alertId}:prices";
     }
 }
