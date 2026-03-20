@@ -60,8 +60,8 @@ public class ItemSearcherTest
         var newerTime = DateTime.UtcNow;
         var items = new List<Item>
         {
-            BuildItem("item-1", newerTime),
-            BuildItem("item-2", newerTime.AddMinutes(1))
+            BuildItem("item-1", newerTime, 10),
+            BuildItem("item-2", newerTime.AddMinutes(1), 11)
         };
 
         _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
@@ -74,7 +74,9 @@ public class ItemSearcherTest
             events.OfType<NewItemsFoundEvent>().Single().UserId == alert.UserId)), Times.Once);
 
         _alertRepositoryMock.Verify(x => x.Update(alert), Times.Once);
-        Assert.NotNull(_cache.GetString(alert.GetCacheKey()));
+        var cachedPrices = GetCachedPrices(alert.GetCacheKey());
+        Assert.Equal(10, cachedPrices["item-1"]);
+        Assert.Equal(11, cachedPrices["item-2"]);
     }
 
     [Fact]
@@ -85,7 +87,7 @@ public class ItemSearcherTest
         DateTime? lastSearchedAt = null;
         var items = new List<Item>
         {
-            BuildItem("item-1", now.AddMinutes(-10))
+            BuildItem("item-1", now.AddMinutes(-10), 10)
         };
 
         _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
@@ -114,12 +116,12 @@ public class ItemSearcherTest
         var cachedId = "item-cached";
         var items = new List<Item>
         {
-            BuildItem(cachedId, createdAt.AddMinutes(10))
+            BuildItem(cachedId, createdAt.AddMinutes(10), 30)
         };
 
         _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
         _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(items);
-        _cache.SetString(alert.GetCacheKey(), JsonSerializer.Serialize(new List<string> { cachedId }));
+        _cache.SetString(alert.GetCacheKey(), JsonSerializer.Serialize(new Dictionary<string, double?> { [cachedId] = 30 }));
         _alertRepositoryMock
             .Setup(x => x.UpdateLastSearchedAt(alert.Id, It.IsAny<DateTime>()))
             .Callback<Guid, DateTime>((_, updatedAt) => lastSearchedAt = updatedAt)
@@ -132,7 +134,50 @@ public class ItemSearcherTest
         _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Never);
         Assert.NotNull(lastSearchedAt);
         Assert.Equal(lastSearchedAt, alert.LastSearchedAt);
-        Assert.NotNull(_cache.GetString(alert.GetCacheKey()));
+        Assert.Equal(30, GetCachedPrices(alert.GetCacheKey())[cachedId]);
+    }
+
+    [Fact]
+    public async Task Execute_WhenCachedItemPriceDrops_PublishesItemWithPriceDropSuffix()
+    {
+        var createdAt = DateTime.UtcNow;
+        var alert = BuildAlert(createdAt.AddMinutes(-30), createdAt.AddMinutes(-20), createdAt.AddMinutes(-20));
+        var cachedId = "item-cached";
+        var items = new List<Item>
+        {
+            BuildItem(cachedId, createdAt.AddMinutes(10), 20)
+        };
+
+        _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
+        _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(items);
+        _cache.SetString(alert.GetCacheKey(), JsonSerializer.Serialize(new Dictionary<string, double?> { [cachedId] = 30 }));
+
+        await _sut.Execute();
+
+        _eventBusMock.Verify(x => x.Publish(It.Is<List<DomainEvent>>(events =>
+            events.OfType<NewItemsFoundEvent>().Single().Items!.Single().Title == "title (Baja de Precio)")), Times.Once);
+        Assert.Equal(20, GetCachedPrices(alert.GetCacheKey())[cachedId]);
+    }
+
+    [Fact]
+    public async Task Execute_WhenCachedItemHasLegacyIdOnly_DoesNotNotifyAndUpdatesCachePrice()
+    {
+        var createdAt = DateTime.UtcNow;
+        var alert = BuildAlert(createdAt.AddMinutes(-30), createdAt.AddMinutes(-20), createdAt.AddMinutes(-20));
+        var cachedId = "item-cached";
+        var items = new List<Item>
+        {
+            BuildItem(cachedId, createdAt.AddMinutes(10), 25)
+        };
+
+        _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
+        _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(items);
+        _cache.SetString(alert.GetCacheKey(), JsonSerializer.Serialize(new List<string> { cachedId }));
+
+        await _sut.Execute();
+
+        _eventBusMock.Verify(x => x.Publish(It.IsAny<List<DomainEvent>>()), Times.Never);
+        Assert.Equal(25, GetCachedPrices(alert.GetCacheKey())[cachedId]);
     }
 
     [Fact]
@@ -160,7 +205,7 @@ public class ItemSearcherTest
             isActive, lastSearchedAt);
     }
 
-    private static Item BuildItem(string id, DateTime createdAt, DateTime? modifiedAt = null)
+    private static Item BuildItem(string id, DateTime createdAt, double currentPrice, DateTime? modifiedAt = null)
     {
         return new Item
         {
@@ -169,7 +214,7 @@ public class ItemSearcherTest
             Title = "title",
             Description = "desc",
             CategoryId = 1,
-            Price = Price.Create(10, null),
+            Price = Price.Create(currentPrice, null),
             Images = new List<string>(),
             Location = Location.Create("city", "region"),
             Shipping = false,
@@ -179,5 +224,13 @@ public class ItemSearcherTest
             CreatedAt = new DateTimeOffset(createdAt).ToUnixTimeMilliseconds(),
             ModifiedAt = new DateTimeOffset(modifiedAt ?? createdAt).ToUnixTimeMilliseconds()
         };
+    }
+
+    private Dictionary<string, double?> GetCachedPrices(string key)
+    {
+        var cached = _cache.GetString(key);
+        Assert.NotNull(cached);
+
+        return JsonSerializer.Deserialize<Dictionary<string, double?>>(cached!)!;
     }
 }

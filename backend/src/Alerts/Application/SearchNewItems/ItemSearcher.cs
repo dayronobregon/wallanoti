@@ -11,6 +11,7 @@ namespace Wallanoti.Src.Alerts.Application.SearchNewItems;
 
 public sealed class ItemSearcher
 {
+    private const string PriceDropSuffix = "(Baja de Precio)";
     private readonly IEventBus _eventBus;
     private readonly IAlertRepository _alertRepository;
     private readonly IWallapopRepository _wallapopRepository;
@@ -69,11 +70,43 @@ public sealed class ItemSearcher
 
             var cachedItems = GetCachedItems(alert.GetCacheKey());
 
-            var newItems = (from item in wallapopItems
-                let itemCreatedAt = DateTimeOffset.FromUnixTimeMilliseconds(item.CreatedAt).DateTime
-                where itemCreatedAt.CompareTo(alert.CreatedAt) >= 0 &&
-                      !AlreadyFound(cachedItems, item.Id)
-                select item).ToList();
+            var eligibleItems = wallapopItems
+                .Where(item => DateTimeOffset.FromUnixTimeMilliseconds(item.CreatedAt).DateTime.CompareTo(alert.CreatedAt) >= 0)
+                .ToList();
+
+            var newItems = new List<Item>();
+
+            foreach (var item in eligibleItems)
+            {
+                var alreadyFound = AlreadyFound(cachedItems, item.Id);
+
+                if (!alreadyFound)
+                {
+                    newItems.Add(item);
+                    continue;
+                }
+
+                if (item.Price is null)
+                {
+                    continue;
+                }
+
+                if (!cachedItems.TryGetValue(item.Id, out var cachedPrice) || !cachedPrice.HasValue)
+                {
+                    continue;
+                }
+
+                if (item.Price.CurrentPrice < cachedPrice.Value)
+                {
+                    item.Title = item.Title.EndsWith(PriceDropSuffix)
+                        ? item.Title
+                        : $"{item.Title} {PriceDropSuffix}";
+                    newItems.Add(item);
+                }
+            }
+
+            UpdateCachePrices(cachedItems, eligibleItems);
+            await SaveCachedItems(alert.GetCacheKey(), cachedItems);
 
             var now = _timeProvider.GetUtcNow().UtcDateTime;
 
@@ -87,25 +120,58 @@ public sealed class ItemSearcher
             //Añadir una nueva busqueda con los nuevos items encontrados
             alert.NewSearch(newItems, now, now);
 
-            //Guardar en cache los ids de los items encontrados
-            await _cache.SetAsync(alert.GetCacheKey(),
-                Encoding.UTF8.GetBytes(JsonSerializer.Serialize(wallapopItems.Select(x => x.Id))));
-
             await _alertRepository.Update(alert);
 
             await _eventBus.Publish(alert.PullDomainEvents());
         }
     }
 
-    private static bool AlreadyFound(List<string> elementsInCache, string wallapopItemId)
+    private static bool AlreadyFound(Dictionary<string, double?> elementsInCache, string wallapopItemId)
     {
-        return elementsInCache.Count != 0 && elementsInCache.Contains(wallapopItemId);
+        return elementsInCache.Count != 0 && elementsInCache.ContainsKey(wallapopItemId);
     }
 
-    private List<string> GetCachedItems(string alertId)
+    private Dictionary<string, double?> GetCachedItems(string alertId)
     {
         var cached = _cache.GetString(alertId);
 
-        return cached is null ? [] : JsonSerializer.Deserialize<List<string>>(cached) ?? [];
+        if (cached is null)
+        {
+            return [];
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<string, double?>>(cached) ?? [];
+        }
+        catch (JsonException)
+        {
+            var legacyCachedIds = JsonSerializer.Deserialize<List<string>>(cached) ?? [];
+            return legacyCachedIds.ToDictionary(id => id, _ => (double?)null);
+        }
+    }
+
+    private void UpdateCachePrices(Dictionary<string, double?> cachedItems, IEnumerable<Item> items)
+    {
+        foreach (var item in items)
+        {
+            var currentPrice = item.Price?.CurrentPrice;
+            if (!currentPrice.HasValue)
+            {
+                continue;
+            }
+
+            cachedItems[item.Id] = currentPrice.Value;
+        }
+    }
+
+    private async Task SaveCachedItems(string alertId, Dictionary<string, double?> cachedItems)
+    {
+        if (cachedItems.Count == 0)
+        {
+            return;
+        }
+
+        await _cache.SetAsync(alertId, Encoding.UTF8.GetBytes(JsonSerializer.Serialize(cachedItems)));
     }
 }
