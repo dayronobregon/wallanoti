@@ -49,3 +49,7 @@ services:
         condition: service_started
     networks:
       - wallanoti
+      
+networks:
+  wallanoti:
+    driver: bridge
