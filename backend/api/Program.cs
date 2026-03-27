@@ -200,6 +200,7 @@ app.UseMiddleware<UserContextMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Services.UseScheduler(scheduler =>
 {

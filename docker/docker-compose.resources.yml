@@ -1,13 +1,13 @@
 services:
   postgres:
-    image: postgres:16
+    image: postgres:17
     restart: unless-stopped
     container_name: wallanoti-postgres
     hostname: postgres.${HOSTNAME:-localhost}
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: wallanoti_db
+      POSTGRES_DB: ${POSTGRES_DATABASE:-wallanoti_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./initdb:/docker-entrypoint-initdb.d:ro
