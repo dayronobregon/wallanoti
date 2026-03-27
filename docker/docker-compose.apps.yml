@@ -10,13 +10,13 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__Postgres: Host=postgres;Database=wallanoti_db;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
-      ConnectionStrings__Redis: redis:6379
-      RabbitMq__HostName: rabbitmq
+      ConnectionStrings__Postgres: Host=${POSTGRES_HOSTNAME:-postgres};Database=${POSTGRES_DATABASE:-wallanoti_db};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      ConnectionStrings__Redis: ${REDIS_HOSTNAME:-redis}:${REDIS_PORT:-6379}
+      RabbitMq__HostName: ${RABBITMQ_HOSTNAME:-rabbitmq}
       RabbitMq__UserName: ${RABBITMQ_USER:-admin}
       RabbitMq__Password: ${RABBITMQ_PASSWORD:-admin}
       RabbitMq__VirtualHost: /
-      RabbitMq__Port: 5672
+      RabbitMq__Port: ${RABBITMQ_PORT:-5672}
       Jwt__Secret: ${JWT_SECRET:-CHANGE_ME_USE_ENV_OR_USER_SECRETS_MIN_32_CHARS}
       Jwt__Issuer: ${JWT_ISSUER:-wallanoti}
       Jwt__Audience: ${JWT_AUDIENCE:-wallanoti-users}
@@ -29,6 +29,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     networks:
       - wallanoti
 
@@ -46,7 +52,7 @@ services:
       - "80:80"
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
     networks:
       - wallanoti
       
