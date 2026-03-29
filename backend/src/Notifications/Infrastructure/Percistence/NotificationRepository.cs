@@ -78,4 +78,5 @@ public sealed class NotificationRepository : INotificationRepository
 
         return notifications;
     }
+
 }

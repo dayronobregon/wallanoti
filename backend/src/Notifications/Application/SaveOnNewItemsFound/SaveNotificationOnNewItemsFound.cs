@@ -1,4 +1,5 @@
 using Wallanoti.Src.Alerts.Domain;
+using Wallanoti.Src.Alerts.Domain.Models;
 using Wallanoti.Src.Notifications.Domain;
 using Wallanoti.Src.Shared.Domain.Events;
 using Wallanoti.Src.Shared.Domain.ValueObjects;
@@ -7,6 +8,7 @@ namespace Wallanoti.Src.Notifications.Application.SaveOnNewItemsFound;
 
 public sealed class SaveNotificationOnNewItemsFound : IDomainEventHandler<NewItemsFoundEvent>
 {
+    private const string PriceDropSuffix = "(Baja de Precio)";
     private readonly INotificationRepository _notificationRepository;
     private readonly IEventBus _eventBus;
     private readonly TimeProvider _timeProvider;
@@ -20,16 +22,17 @@ public sealed class SaveNotificationOnNewItemsFound : IDomainEventHandler<NewIte
 
     public async Task Handle(NewItemsFoundEvent @event)
     {
+        var items = @event.Items?.ToList() ?? [];
         var notifications = new List<Notification>();
         var events = new List<DomainEvent>();
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         
-        foreach (var item in @event.Items ?? [])
+        foreach (var item in items)
         {
             var notification = Notification.Create(
                 Guid.NewGuid(),
                 @event.UserId,
-                item.Title,
+                BuildNotificationTitle(item),
                 item.Description,
                 item.Price,
                 item.Images,
@@ -45,5 +48,13 @@ public sealed class SaveNotificationOnNewItemsFound : IDomainEventHandler<NewIte
         await _notificationRepository.AddRangeAsync(notifications);
 
         await _eventBus.Publish(events);
+    }
+
+    private static string BuildNotificationTitle(
+        Item item)
+    {
+        var isPriceDrop = item.Price?.PreviousPrice is not null && item.Price.PreviousPrice.Value > item.Price.CurrentPrice;
+
+        return isPriceDrop ? $"{item.Title} {PriceDropSuffix}" : item.Title;
     }
 }
