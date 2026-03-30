@@ -24,6 +24,13 @@ cp .env.example .env
 # Edita .env con tus credenciales y tokens
 ```
 
+Para CORS en Docker, configura `CORS_ALLOWED_ORIGINS` en `.env` (CSV, separado por comas).
+Ejemplo:
+
+```env
+CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173,https://app.tudominio.com
+```
+
 ### 2. Solo recursos (desarrollo local)
 
 Levanta solo PostgreSQL, RabbitMQ y Redis.
