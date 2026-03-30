@@ -20,6 +20,7 @@ services:
       Jwt__Secret: ${JWT_SECRET:-CHANGE_ME_USE_ENV_OR_USER_SECRETS_MIN_32_CHARS}
       Jwt__Issuer: ${JWT_ISSUER:-wallanoti}
       Jwt__Audience: ${JWT_AUDIENCE:-wallanoti-users}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost}
       TelegramBotToken: ${TELEGRAM_BOT_TOKEN:-YOUR_TELEGRAM_BOT_TOKEN}
       Notifications__OwnerChatId: ${TELEGRAM_OWNER_CHAT_ID:-YOUR_TELEGRAM_OWNER_CHAT_ID}
     depends_on:
