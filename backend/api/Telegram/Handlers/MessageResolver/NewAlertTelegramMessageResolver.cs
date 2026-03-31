@@ -5,7 +5,7 @@ using Wallanoti.Src.Notifications.Infrastructure.Telegram;
 
 namespace Wallanoti.Api.Telegram.Handlers.MessageResolver;
 
-public sealed class NewAlertTelegramMessageResolver : IMessageResolver
+public sealed class NewAlertTelegramMessageResolver : SafeTelegramMessageResolver
 {
     public const string Command = "/alert";
 
@@ -14,13 +14,15 @@ public sealed class NewAlertTelegramMessageResolver : IMessageResolver
 
     public NewAlertTelegramMessageResolver(
         ITelegramBotConnection botConnection,
-        ITelegramConversationRepository conversationRepository)
+        ITelegramConversationRepository conversationRepository,
+        ILogger<NewAlertTelegramMessageResolver> logger)
+        : base(botConnection, logger)
     {
         _botConnection = botConnection;
         _conversationRepository = conversationRepository;
     }
 
-    public async Task Execute(Message message)
+    protected override async Task ExecuteCore(Message message)
     {
         var chatId = message.Chat.Id;
 

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Telegram.Bot.Types;
 using Wallanoti.Api.Telegram.Conversation;
@@ -29,14 +30,17 @@ public class OnMessageHandlerFactoryTest
     {
         _startResolver = new StartTelegramMessageResolver(_scopeFactoryMock.Object, _botConnectionMock.Object);
         _newAlertResolver =
-            new NewAlertTelegramMessageResolver(_botConnectionMock.Object, _conversationRepoMock.Object);
+            new NewAlertTelegramMessageResolver(_botConnectionMock.Object, _conversationRepoMock.Object,
+                NullLogger<NewAlertTelegramMessageResolver>.Instance);
         _listResolver = new ListTelegramMessageResolver(_scopeFactoryMock.Object, _botConnectionMock.Object);
         _alertUrlResolver = new AlertUrlTelegramMessageResolver(_scopeFactoryMock.Object, _botConnectionMock.Object,
-            _conversationRepoMock.Object);
+            _conversationRepoMock.Object,
+            NullLogger<AlertUrlTelegramMessageResolver>.Instance);
         _cancelResolver = new CancelTelegramMessageResolver(_botConnectionMock.Object, _conversationRepoMock.Object);
         _unknownResolver = new UnknownTelegramMessageResolver(_pushNotificationSenderMock.Object);
 
         _sut = new OnMessageHandlerFactory(
+            NullLogger<OnMessageHandlerFactory>.Instance,
             _startResolver,
             _newAlertResolver,
             _listResolver,

@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Telegram.Bot;
 using Telegram.Bot.Requests;
@@ -13,6 +14,8 @@ namespace Wallanoti.Tests.Telegram.Handlers.MessageResolver;
 
 public class AlertUrlTelegramMessageResolverTest
 {
+    private const string StandardFriendlyErrorMessage = "Ha ocurrido un error. Será notificado al administrador.";
+
     private readonly Mock<ITelegramBotClient> _botClientMock = new();
     private readonly Mock<ITelegramBotConnection> _botConnectionMock = new();
     private readonly Mock<ITelegramConversationRepository> _conversationRepoMock = new();
@@ -47,7 +50,8 @@ public class AlertUrlTelegramMessageResolverTest
         _sut = new AlertUrlTelegramMessageResolver(
             _scopeFactoryMock.Object,
             _botConnectionMock.Object,
-            _conversationRepoMock.Object);
+            _conversationRepoMock.Object,
+            NullLogger<AlertUrlTelegramMessageResolver>.Instance);
     }
 
     [Fact]
@@ -100,5 +104,26 @@ public class AlertUrlTelegramMessageResolverTest
             Times.Once);
 
         _conversationRepoMock.Verify(x => x.ClearAsync(chatId), Times.Once);
+    }
+
+    [Fact]
+    public async Task Execute_WhenCreateAlertFails_SendsFriendlyErrorAndKeepsState()
+    {
+        const long chatId = 777L;
+        const string url = "https://es.wallapop.com/search?keywords=nintendo+switch";
+        var message = new Message { Chat = new Chat { Id = chatId }, Text = url };
+
+        _mediatorMock
+            .Setup(x => x.Send(It.IsAny<CreateAlertCommand>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("db timeout"));
+
+        await _sut.Execute(message);
+
+        _conversationRepoMock.Verify(x => x.ClearAsync(It.IsAny<long>()), Times.Never);
+        _botClientMock.Verify(
+            x => x.SendRequest(
+                It.Is<SendMessageRequest>(r => r.ChatId == chatId && r.Text == StandardFriendlyErrorMessage),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }
