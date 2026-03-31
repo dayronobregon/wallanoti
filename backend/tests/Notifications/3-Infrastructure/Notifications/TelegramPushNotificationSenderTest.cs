@@ -3,6 +3,7 @@ using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 using Wallanoti.Src.Notifications.Domain;
 using Wallanoti.Src.Notifications.Infrastructure.Notifications;
 using Wallanoti.Src.Notifications.Infrastructure.Telegram;
@@ -99,6 +100,37 @@ public class TelegramPushNotificationSenderTest
         _botClientMock.Verify(
             x => x.SendRequest(It.IsAny<SendMessageRequest>(), It.IsAny<CancellationToken>()),
             Times.Exactly(4));
+    }
+
+    [Fact]
+    public async Task NotifyByUserId_WithButtonsAndProtectedContent_SendsConfiguredMessage()
+    {
+        var sender = new TelegramPushNotificationSender(_botConnectionMock.Object);
+
+        _botClientMock
+            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Message());
+
+        await sender.Notify(
+            123,
+            "iPhone",
+            new PushMessageOptions(
+                ProtectContent: true,
+                ActionButtons:
+                [
+                    new PushActionButton("Editar (Próximamente)", "edit:1"),
+                    new PushActionButton("Eliminar", "delete:1")
+                ]));
+
+        _botClientMock.Verify(
+            x => x.SendRequest(
+                It.Is<SendMessageRequest>(request =>
+                    request.ChatId == 123 &&
+                    request.Text == "iPhone" &&
+                    request.ProtectContent == true &&
+                    request.ReplyMarkup is InlineKeyboardMarkup),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     private static Notification BuildNotification(IReadOnlyList<string> images)

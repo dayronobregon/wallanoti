@@ -1,21 +1,20 @@
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using Wallanoti.Api.Telegram.Conversation;
-using Wallanoti.Src.Notifications.Infrastructure.Telegram;
+using Wallanoti.Src.Notifications.Domain;
 
 namespace Wallanoti.Api.Telegram.Handlers.MessageResolver;
 
 public sealed class CancelTelegramMessageResolver : SafeTelegramMessageResolver
 {
     public const string Command = "/cancel";
-
+    
     private readonly ITelegramConversationRepository _conversationRepository;
 
     public CancelTelegramMessageResolver(
-        ITelegramBotConnection botConnection,
+        IPushNotificationSender pushNotificationSender,
         ITelegramConversationRepository conversationRepository,
         ILogger<CancelTelegramMessageResolver> logger)
-        : base(botConnection, logger)
+        : base(pushNotificationSender, logger)
     {
         _conversationRepository = conversationRepository;
     }
@@ -27,14 +26,14 @@ public sealed class CancelTelegramMessageResolver : SafeTelegramMessageResolver
 
         if (state == ConversationState.Idle)
         {
-            await BotConnection.Client().SendMessage(chatId,
+            await PushNotificationSender.Notify(chatId,
                 "No tienes ninguna operación en curso.");
             return;
         }
 
         await _conversationRepository.ClearAsync(chatId);
 
-        await BotConnection.Client().SendMessage(chatId,
+        await PushNotificationSender.Notify(chatId,
             "Operación cancelada ✅");
     }
 }

@@ -1,6 +1,5 @@
-using Telegram.Bot;
 using Telegram.Bot.Types;
-using Wallanoti.Src.Notifications.Infrastructure.Telegram;
+using Wallanoti.Src.Notifications.Domain;
 
 namespace Wallanoti.Api.Telegram.Handlers.MessageResolver;
 
@@ -8,14 +7,14 @@ public abstract class SafeTelegramMessageResolver : IMessageResolver
 {
     private const string DefaultFriendlyErrorMessage = "Ha ocurrido un error. Será notificado al administrador.";
 
-    protected readonly ITelegramBotConnection BotConnection;
-    protected ILogger Logger { get; }
+    protected readonly IPushNotificationSender PushNotificationSender;
+    private ILogger Logger { get; }
 
     protected SafeTelegramMessageResolver(
-        ITelegramBotConnection botConnection,
+        IPushNotificationSender pushNotificationSender,
         ILogger logger)
     {
-        BotConnection = botConnection;
+        PushNotificationSender = pushNotificationSender;
         Logger = logger;
     }
 
@@ -50,7 +49,7 @@ public abstract class SafeTelegramMessageResolver : IMessageResolver
     {
         try
         {
-            await BotConnection.Client().SendMessage(chatId, FriendlyErrorMessage);
+            await PushNotificationSender.Notify(chatId, FriendlyErrorMessage);
         }
         catch (Exception exception)
         {

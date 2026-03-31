@@ -6,13 +6,11 @@ using Wallanoti.Api.Telegram.Conversation;
 using Wallanoti.Api.Telegram.Handlers;
 using Wallanoti.Api.Telegram.Handlers.MessageResolver;
 using Wallanoti.Src.Notifications.Domain;
-using Wallanoti.Src.Notifications.Infrastructure.Telegram;
 
 namespace Wallanoti.Tests.Telegram.Handlers;
 
 public class OnMessageHandlerFactoryTest
 {
-    private readonly Mock<ITelegramBotConnection> _botConnectionMock = new();
     private readonly Mock<ITelegramConversationRepository> _conversationRepoMock = new();
     private readonly Mock<IServiceScopeFactory> _scopeFactoryMock = new();
     private readonly Mock<IPushNotificationSender> _pushNotificationSenderMock = new();
@@ -28,16 +26,24 @@ public class OnMessageHandlerFactoryTest
 
     public OnMessageHandlerFactoryTest()
     {
-        _startResolver = new StartTelegramMessageResolver(_scopeFactoryMock.Object, _botConnectionMock.Object);
+        _startResolver = new StartTelegramMessageResolver(
+            _scopeFactoryMock.Object,
+            _pushNotificationSenderMock.Object,
+            NullLogger<StartTelegramMessageResolver>.Instance);
         _newAlertResolver =
-            new NewAlertTelegramMessageResolver(_botConnectionMock.Object, _conversationRepoMock.Object,
+            new NewAlertTelegramMessageResolver(_pushNotificationSenderMock.Object, _conversationRepoMock.Object,
                 NullLogger<NewAlertTelegramMessageResolver>.Instance);
-        _listResolver = new ListTelegramMessageResolver(_scopeFactoryMock.Object, _botConnectionMock.Object);
-        _alertUrlResolver = new AlertUrlTelegramMessageResolver(_scopeFactoryMock.Object, _botConnectionMock.Object,
+        _listResolver = new ListTelegramMessageResolver(_scopeFactoryMock.Object, _pushNotificationSenderMock.Object, NullLogger<ListTelegramMessageResolver>.Instance);
+        _alertUrlResolver = new AlertUrlTelegramMessageResolver(_scopeFactoryMock.Object, _pushNotificationSenderMock.Object,
             _conversationRepoMock.Object,
             NullLogger<AlertUrlTelegramMessageResolver>.Instance);
-        _cancelResolver = new CancelTelegramMessageResolver(_botConnectionMock.Object, _conversationRepoMock.Object);
-        _unknownResolver = new UnknownTelegramMessageResolver(_pushNotificationSenderMock.Object);
+        _cancelResolver = new CancelTelegramMessageResolver(
+            _pushNotificationSenderMock.Object,
+            _conversationRepoMock.Object,
+            NullLogger<CancelTelegramMessageResolver>.Instance);
+        _unknownResolver = new UnknownTelegramMessageResolver(
+            _pushNotificationSenderMock.Object,
+            NullLogger<UnknownTelegramMessageResolver>.Instance);
 
         _sut = new OnMessageHandlerFactory(
             NullLogger<OnMessageHandlerFactory>.Instance,

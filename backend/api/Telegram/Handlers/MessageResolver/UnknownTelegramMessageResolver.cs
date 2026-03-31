@@ -1,7 +1,5 @@
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using Wallanoti.Src.Notifications.Domain;
-using Wallanoti.Src.Notifications.Infrastructure.Telegram;
 
 namespace Wallanoti.Api.Telegram.Handlers.MessageResolver;
 
@@ -11,9 +9,8 @@ public sealed class UnknownTelegramMessageResolver : SafeTelegramMessageResolver
 
     public UnknownTelegramMessageResolver(
         IPushNotificationSender pushNotificationSender,
-        ITelegramBotConnection botConnection,
         ILogger<UnknownTelegramMessageResolver> logger)
-        : base(botConnection, logger)
+        : base(pushNotificationSender, logger)
     {
         _pushNotificationSender = pushNotificationSender;
     }
