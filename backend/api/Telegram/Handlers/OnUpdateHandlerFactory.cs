@@ -35,7 +35,15 @@ public sealed class OnUpdateHandlerFactory
 
         if (callbackQueryData.StartsWith("delete:"))
         {
-            var alertId = Guid.Parse(callbackQueryData.Split(":")[1]);
+            var parts = callbackQueryData.Split(':');
+            if (parts.Length != 2 || !Guid.TryParse(parts[1], out var alertId))
+            {
+                _logger.LogWarning(
+                    "Telegram update has invalid delete callback data. updateId={UpdateId}, callbackData={CallbackData}",
+                    update.Id,
+                    callbackQueryData);
+                return;
+            }
 
             _logger.LogInformation(
                 "Telegram update selected delete alert command. updateId={UpdateId}, alertId={AlertId}",

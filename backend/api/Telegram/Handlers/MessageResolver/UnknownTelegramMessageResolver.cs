@@ -5,16 +5,20 @@ using Wallanoti.Src.Notifications.Infrastructure.Telegram;
 
 namespace Wallanoti.Api.Telegram.Handlers.MessageResolver;
 
-public sealed class UnknownTelegramMessageResolver : IMessageResolver
+public sealed class UnknownTelegramMessageResolver : SafeTelegramMessageResolver
 {
     private readonly IPushNotificationSender _pushNotificationSender;
 
-    public UnknownTelegramMessageResolver(IPushNotificationSender pushNotificationSender)
+    public UnknownTelegramMessageResolver(
+        IPushNotificationSender pushNotificationSender,
+        ITelegramBotConnection botConnection,
+        ILogger<UnknownTelegramMessageResolver> logger)
+        : base(botConnection, logger)
     {
         _pushNotificationSender = pushNotificationSender;
     }
 
-    public async Task Execute(Message message)
+    protected override async Task ExecuteCore(Message message)
     {
         const string helpMessage =
             "Uy, ese comando me ha pillado mirando ofertas de tostadoras... Yo solo sirvo para encontrar chollos en Wallapop 😄\n\n" +

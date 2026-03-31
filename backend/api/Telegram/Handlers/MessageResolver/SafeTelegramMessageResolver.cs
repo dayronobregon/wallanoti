@@ -8,14 +8,14 @@ public abstract class SafeTelegramMessageResolver : IMessageResolver
 {
     private const string DefaultFriendlyErrorMessage = "Ha ocurrido un error. Será notificado al administrador.";
 
-    private readonly ITelegramBotConnection _botConnection;
+    protected readonly ITelegramBotConnection BotConnection;
     protected ILogger Logger { get; }
 
     protected SafeTelegramMessageResolver(
         ITelegramBotConnection botConnection,
         ILogger logger)
     {
-        _botConnection = botConnection;
+        BotConnection = botConnection;
         Logger = logger;
     }
 
@@ -50,7 +50,7 @@ public abstract class SafeTelegramMessageResolver : IMessageResolver
     {
         try
         {
-            await _botConnection.Client().SendMessage(chatId, FriendlyErrorMessage);
+            await BotConnection.Client().SendMessage(chatId, FriendlyErrorMessage);
         }
         catch (Exception exception)
         {
