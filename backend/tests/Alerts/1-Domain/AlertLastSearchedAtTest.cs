@@ -74,45 +74,31 @@ public class AlertLastSearchedAtTest
     }
 
     [Fact]
-    public void NewSearch_WithItems_ShouldRecordSearch()
+    public void NewSearch_WithLabeledItems_ShouldRecordSearch()
     {
         // Arrange
         var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _createdAt);
         var eventTime = _createdAt.AddMinutes(5);
         var searchTime = _createdAt.AddMinutes(5);
-        var items = new List<Item>
+        var item = new Item
         {
-            new()
-            {
-                Id = "item-1",
-                WallapopUserId = "user",
-                Title = "title",
-                WebSlug = "slug",
-                CreatedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                ModifiedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
-            }
+            Id = "item-1",
+            WallapopUserId = "user",
+            Title = "title",
+            WebSlug = "slug",
+            CreatedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            ModifiedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+        };
+        var labeledItems = new List<LabeledAlertItem>
+        {
+            new(item, ItemNotificationLabel.New)
         };
 
         // Act
-        alert.NewSearch(items, eventTime, searchTime);
+        alert.NewSearch(labeledItems, eventTime, searchTime);
 
         // Assert
         Assert.NotNull(alert.LastSearchedAt);
-    }
-
-    [Fact]
-    public void NewSearch_WithNullItems_ShouldNotRecordSearch()
-    {
-        // Arrange
-        var alert = Alert.Create(userId: 123, name: "Test Alert", url: "https://es.wallapop.com/search", _createdAt);
-        var eventTime = _createdAt.AddMinutes(5);
-        var searchTime = _createdAt.AddMinutes(5);
-
-        // Act
-        alert.NewSearch(null, eventTime, searchTime);
-
-        // Assert
-        Assert.Null(alert.LastSearchedAt);
     }
 
     [Fact]
@@ -124,7 +110,7 @@ public class AlertLastSearchedAtTest
         var searchTime = _createdAt.AddMinutes(5);
 
         // Act
-        alert.NewSearch(new List<Item>(), eventTime, searchTime);
+        alert.NewSearch(new List<LabeledAlertItem>(), eventTime, searchTime);
 
         // Assert
         Assert.Null(alert.LastSearchedAt);

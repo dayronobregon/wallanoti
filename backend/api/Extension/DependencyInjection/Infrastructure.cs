@@ -13,6 +13,7 @@ using Wallanoti.Src.Notifications.Application.SaveOnNewItemsFound;
 using Wallanoti.Src.Notifications.Domain;
 using Wallanoti.Src.Notifications.Infrastructure.Notifications;
 using Wallanoti.Src.Notifications.Infrastructure.Percistence;
+using Wallanoti.Src.Notifications.Infrastructure.Telegram;
 using Wallanoti.Src.Shared.Domain.Events;
 using Wallanoti.Src.Shared.Infrastructure.Events.MassTransit;
 using Wallanoti.Src.Shared.Infrastructure.Percistence.EntityFramework;

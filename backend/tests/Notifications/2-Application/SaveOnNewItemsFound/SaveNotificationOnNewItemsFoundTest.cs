@@ -25,25 +25,75 @@ public class SaveNotificationOnNewItemsFoundTest
     }
 
     [Fact]
-    public async Task Handle_WithItems_ShouldPersistNotificationsAndPublishEvents()
+    public async Task Handle_WithNewItems_ShouldPersistNotificationsAndPublishEvents()
     {
-        var items = new List<Item> { BuildItem("one"), BuildItem("two") };
-        var @event = new NewItemsFoundEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString("o"), Guid.NewGuid(), 7,
-            items);
+        var labeledItems = new List<LabeledAlertItem>
+        {
+            new(BuildItem("one"), ItemNotificationLabel.New),
+            new(BuildItem("two"), ItemNotificationLabel.New)
+        };
+        var @event = BuildEvent(labeledItems);
 
         await _sut.Handle(@event);
 
-        _repositoryMock.Verify(x => x.AddRangeAsync(It.Is<IEnumerable<Notification>>(n => n.Count() == items.Count)),
+        _repositoryMock.Verify(x => x.AddRangeAsync(It.Is<IEnumerable<Notification>>(n => n.Count() == labeledItems.Count)),
             Times.Once);
         _eventBusMock.Verify(x => x.Publish(It.Is<List<DomainEvent>>(events =>
-            events.Count == items.Count && events.All(e => e is NotificationCreatedEvent))), Times.Once);
+            events.Count == labeledItems.Count && events.All(e => e is NotificationCreatedEvent))), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_WithoutItems_DoesNothing()
+    public async Task Handle_WithPriceDropItem_ShouldIncludeLabelInTitle()
     {
-        var @event = new NewItemsFoundEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString("o"), Guid.NewGuid(), 7,
-            null);
+        const string originalTitle = "Bicicleta de montaña";
+        var item = BuildItem("drop", title: originalTitle);
+        var labeledItems = new List<LabeledAlertItem>
+        {
+            new(item, ItemNotificationLabel.PriceDrop)
+        };
+        var @event = BuildEvent(labeledItems);
+
+        List<Notification>? savedNotifications = null;
+        _repositoryMock
+            .Setup(x => x.AddRangeAsync(It.IsAny<IEnumerable<Notification>>()))
+            .Callback<IEnumerable<Notification>>(notifications => savedNotifications = notifications.ToList())
+            .Returns(Task.CompletedTask);
+
+        await _sut.Handle(@event);
+
+        Assert.NotNull(savedNotifications);
+        Assert.Single(savedNotifications!);
+        Assert.Equal($"{originalTitle} (Baja de Precio)", savedNotifications![0].Title);
+    }
+
+    [Fact]
+    public async Task Handle_WithNewItem_ShouldUseOriginalTitle()
+    {
+        const string originalTitle = "Bicicleta de montaña";
+        var item = BuildItem("new-one", title: originalTitle);
+        var labeledItems = new List<LabeledAlertItem>
+        {
+            new(item, ItemNotificationLabel.New)
+        };
+        var @event = BuildEvent(labeledItems);
+
+        List<Notification>? savedNotifications = null;
+        _repositoryMock
+            .Setup(x => x.AddRangeAsync(It.IsAny<IEnumerable<Notification>>()))
+            .Callback<IEnumerable<Notification>>(notifications => savedNotifications = notifications.ToList())
+            .Returns(Task.CompletedTask);
+
+        await _sut.Handle(@event);
+
+        Assert.NotNull(savedNotifications);
+        Assert.Single(savedNotifications!);
+        Assert.Equal(originalTitle, savedNotifications![0].Title);
+    }
+
+    [Fact]
+    public async Task Handle_WithoutLabeledItems_DoesNotPersistOrPublish()
+    {
+        var @event = BuildEvent([]);
 
         await _sut.Handle(@event);
 
@@ -51,13 +101,19 @@ public class SaveNotificationOnNewItemsFoundTest
         _eventBusMock.Verify(x => x.Publish(It.Is<List<DomainEvent>>(events => events.Count == 0)), Times.Once);
     }
 
-    private static Item BuildItem(string slug)
+    private static NewItemsFoundEvent BuildEvent(List<LabeledAlertItem> labeledItems)
+    {
+        return new NewItemsFoundEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString("o"), Guid.NewGuid(), 7,
+            labeledItems);
+    }
+
+    private static Item BuildItem(string slug, string? title = null)
     {
         return new Item
         {
             Id = Guid.NewGuid().ToString(),
             WallapopUserId = "user",
-            Title = $"item-{slug}",
+            Title = title ?? $"item-{slug}",
             Description = "desc",
             CategoryId = 1,
             Price = Price.Create(20, 25),

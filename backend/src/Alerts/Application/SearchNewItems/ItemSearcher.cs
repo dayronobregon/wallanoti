@@ -6,6 +6,7 @@ using Wallanoti.Src.Alerts.Domain;
 using Wallanoti.Src.Alerts.Domain.Models;
 using Wallanoti.Src.Notifications.Domain;
 using Wallanoti.Src.Shared.Domain.Events;
+using Wallanoti.Src.Shared.Domain.ValueObjects;
 
 namespace Wallanoti.Src.Alerts.Application.SearchNewItems;
 
@@ -67,29 +68,24 @@ public sealed class ItemSearcher
                 continue;
             }
 
-            var cachedItems = GetCachedItems(alert.GetCacheKey());
+            var cachedPrices = GetCachedPrices(alert.GetCacheKey());
 
-            var newItems = (from item in wallapopItems
-                let itemCreatedAt = DateTimeOffset.FromUnixTimeMilliseconds(item.CreatedAt).DateTime
-                where itemCreatedAt.CompareTo(alert.CreatedAt) >= 0 &&
-                      !AlreadyFound(cachedItems, item.Id)
-                select item).ToList();
+            var labeledItems = ClassifyItems(wallapopItems, alert.CreatedAt, cachedPrices);
 
             var now = _timeProvider.GetUtcNow().UtcDateTime;
 
-            if (newItems.Count == 0)
+            if (labeledItems.Count == 0)
             {
                 alert.RecordSearch(now);
                 await _alertRepository.UpdateLastSearchedAt(alert.Id, alert.LastSearchedAt!.Value);
                 continue;
             }
 
-            //Añadir una nueva busqueda con los nuevos items encontrados
-            alert.NewSearch(newItems, now, now);
+            alert.NewSearch(labeledItems, now, now);
 
-            //Guardar en cache los ids de los items encontrados
+            var updatedPrices = BuildUpdatedPrices(wallapopItems, cachedPrices, labeledItems);
             await _cache.SetAsync(alert.GetCacheKey(),
-                Encoding.UTF8.GetBytes(JsonSerializer.Serialize(wallapopItems.Select(x => x.Id))));
+                Encoding.UTF8.GetBytes(JsonSerializer.Serialize(updatedPrices)));
 
             await _alertRepository.Update(alert);
 
@@ -97,15 +93,89 @@ public sealed class ItemSearcher
         }
     }
 
-    private static bool AlreadyFound(List<string> elementsInCache, string wallapopItemId)
+    private List<LabeledAlertItem> ClassifyItems(
+        List<Item> wallapopItems,
+        DateTime alertCreatedAt,
+        Dictionary<string, double> cachedPrices)
     {
-        return elementsInCache.Count != 0 && elementsInCache.Contains(wallapopItemId);
+        var labeled = new List<LabeledAlertItem>();
+
+        foreach (var item in wallapopItems)
+        {
+            var itemCreatedAt = DateTimeOffset.FromUnixTimeMilliseconds(item.CreatedAt).DateTime;
+
+            if (!cachedPrices.TryGetValue(item.Id, out var cachedPrice))
+            {
+                // Item never seen before — only include if it was created after the alert
+                if (itemCreatedAt.CompareTo(alertCreatedAt) >= 0)
+                {
+                    labeled.Add(new LabeledAlertItem(item, ItemNotificationLabel.New));
+                }
+
+                continue;
+            }
+
+            // Item already seen — check for price drop
+            var currentPrice = item.Price?.CurrentPrice;
+
+            if (currentPrice.HasValue && currentPrice.Value < cachedPrice)
+            {
+                item.Price = Price.Create(currentPrice.Value, cachedPrice);
+                labeled.Add(new LabeledAlertItem(item, ItemNotificationLabel.PriceDrop));
+            }
+
+            // Same price or price increase — skip
+        }
+
+        return labeled;
     }
 
-    private List<string> GetCachedItems(string alertId)
+    private static Dictionary<string, double> BuildUpdatedPrices(
+        List<Item> allItems,
+        Dictionary<string, double> existingCachedPrices,
+        List<LabeledAlertItem> processedItems)
     {
-        var cached = _cache.GetString(alertId);
+        // Start from current cached prices
+        var updated = new Dictionary<string, double>(existingCachedPrices);
 
-        return cached is null ? [] : JsonSerializer.Deserialize<List<string>>(cached) ?? [];
+        // Update prices for items that were processed (new or price drop)
+        foreach (var labeled in processedItems)
+        {
+            var price = labeled.Item.Price?.CurrentPrice;
+            if (price.HasValue)
+            {
+                updated[labeled.Item.Id] = price.Value;
+            }
+        }
+
+        // Also ensure ALL items from Wallapop are tracked in cache (even unchanged ones)
+        // so we can detect future price drops on them
+        foreach (var item in allItems)
+        {
+            if (!updated.ContainsKey(item.Id) && item.Price?.CurrentPrice is { } p)
+            {
+                updated[item.Id] = p;
+            }
+        }
+
+        return updated;
+    }
+
+    private Dictionary<string, double> GetCachedPrices(string cacheKey)
+    {
+        var cached = _cache.GetString(cacheKey);
+
+        if (cached is null)
+            return [];
+
+        // Try to deserialize as new schema: Dictionary<string, double>
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<string, double>>(cached) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
     }
 }

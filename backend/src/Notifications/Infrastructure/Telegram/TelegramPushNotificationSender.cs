@@ -4,9 +4,8 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using Wallanoti.Src.Notifications.Domain;
-using Wallanoti.Src.Notifications.Infrastructure.Telegram;
 
-namespace Wallanoti.Src.Notifications.Infrastructure.Notifications;
+namespace Wallanoti.Src.Notifications.Infrastructure.Telegram;
 
 public class TelegramPushNotificationSender : IPushNotificationSender
 {

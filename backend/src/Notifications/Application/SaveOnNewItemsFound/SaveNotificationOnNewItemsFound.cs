@@ -1,4 +1,5 @@
 using Wallanoti.Src.Alerts.Domain;
+using Wallanoti.Src.Alerts.Domain.Models;
 using Wallanoti.Src.Notifications.Domain;
 using Wallanoti.Src.Shared.Domain.Events;
 using Wallanoti.Src.Shared.Domain.ValueObjects;
@@ -23,13 +24,16 @@ public sealed class SaveNotificationOnNewItemsFound : IDomainEventHandler<NewIte
         var notifications = new List<Notification>();
         var events = new List<DomainEvent>();
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-        
-        foreach (var item in @event.Items ?? [])
+
+        foreach (var labeled in @event.LabeledItems ?? [])
         {
+            var item = labeled.Item;
+            var title = FormatTitle(item.Title, labeled.Label);
+
             var notification = Notification.Create(
                 Guid.NewGuid(),
                 @event.UserId,
-                item.Title,
+                title,
                 item.Description,
                 item.Price,
                 item.Images,
@@ -46,4 +50,10 @@ public sealed class SaveNotificationOnNewItemsFound : IDomainEventHandler<NewIte
 
         await _eventBus.Publish(events);
     }
+
+    private static string FormatTitle(string title, ItemNotificationLabel label) => label switch
+    {
+        ItemNotificationLabel.PriceDrop => $"{title} (Baja de Precio)",
+        _ => title
+    };
 }

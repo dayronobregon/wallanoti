@@ -8,18 +8,20 @@ public sealed class NewItemsFoundEvent : DomainEvent
     public Guid AlertId { get; init; }
     public long UserId { get; init; }
     public IEnumerable<Item>? Items { get; init; }
+    public IEnumerable<LabeledAlertItem>? LabeledItems { get; init; }
 
     public NewItemsFoundEvent()
     {
-        
     }
-    
-    public NewItemsFoundEvent(string eventId, string occurredOn, Guid alertId, long userId, IEnumerable<Item>? items)
+
+    public NewItemsFoundEvent(string eventId, string occurredOn, Guid alertId, long userId,
+        IEnumerable<LabeledAlertItem> labeledItems)
         : base(eventId, occurredOn)
     {
         AlertId = alertId;
         UserId = userId;
-        Items = items;
+        LabeledItems = labeledItems;
+        Items = labeledItems.Select(x => x.Item).ToList();
     }
 
     public override string EventName() => "alert.items-found";

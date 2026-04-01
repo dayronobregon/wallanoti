@@ -22,24 +22,28 @@ public class IncrementOnNewItemsFoundTest
     public async Task Handle_WhenCounterDoesNotExist_CreatesAndSavesWithItemCount()
     {
         var alertId = Guid.NewGuid();
-        var items = new List<Item> { BuildItem("1"), BuildItem("2") };
+        var labeledItems = new List<LabeledAlertItem>
+        {
+            new(BuildItem("1"), ItemNotificationLabel.New),
+            new(BuildItem("2"), ItemNotificationLabel.New)
+        };
         var @event = new NewItemsFoundEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString("o"), alertId, 10,
-            items);
+            labeledItems);
 
         _repositoryMock.Setup(x => x.SearchByAlertId(alertId)).ReturnsAsync((Src.AlertCounter.Domain.AlertCounter?)null);
 
         await _sut.Handle(@event);
 
-        _repositoryMock.Verify(x => x.Save(It.Is<Src.AlertCounter.Domain.AlertCounter>(c => c.AlertId == alertId && c.Total == items.Count)),
+        _repositoryMock.Verify(x => x.Save(It.Is<Src.AlertCounter.Domain.AlertCounter>(c => c.AlertId == alertId && c.Total == labeledItems.Count)),
             Times.Once);
     }
 
     [Fact]
-    public async Task Handle_WhenItemsAreNullOrEmpty_DoesNotPersist()
+    public async Task Handle_WhenItemsAreEmpty_DoesNotPersist()
     {
         var alertId = Guid.NewGuid();
         var @event = new NewItemsFoundEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString("o"), alertId, 1,
-            null);
+            new List<LabeledAlertItem>());
 
         _repositoryMock.Setup(x => x.SearchByAlertId(alertId)).ReturnsAsync((Src.AlertCounter.Domain.AlertCounter?)null);
 
@@ -54,9 +58,9 @@ public class IncrementOnNewItemsFoundTest
         var alertId = Guid.NewGuid();
         var existing = Src.AlertCounter.Domain.AlertCounter.New(Guid.NewGuid(), alertId);
         existing.Increment(1);
-        var items = new List<Item> { BuildItem("new-item") };
+        var labeledItems = new List<LabeledAlertItem> { new(BuildItem("new-item"), ItemNotificationLabel.New) };
         var @event = new NewItemsFoundEvent(Guid.NewGuid().ToString(), DateTime.UtcNow.ToString("o"), alertId, 99,
-            items);
+            labeledItems);
 
         _repositoryMock.Setup(x => x.SearchByAlertId(alertId)).ReturnsAsync(existing);
 
