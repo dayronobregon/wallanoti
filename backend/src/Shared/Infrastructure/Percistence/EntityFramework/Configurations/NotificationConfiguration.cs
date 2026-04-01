@@ -18,7 +18,7 @@ public sealed class NotificationConfiguration : IEntityTypeConfiguration<Notific
         builder.HasOne<User>()
             .WithOne()
             .HasForeignKey<NotificationEntity>(x => x.UserId);
-        
+
         builder.Property(x => x.CreatedAt)
             .HasConversion(dateTime => dateTime, dateTime => DateTime.SpecifyKind(dateTime, DateTimeKind.Utc));
     }

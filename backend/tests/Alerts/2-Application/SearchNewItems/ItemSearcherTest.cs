@@ -54,15 +54,29 @@ public class ItemSearcherTest
     }
 
     [Fact]
-    public async Task Execute_PublishesNewItemsAndUpdatesCache()
+    public async Task Execute_EmitsOnlyFirstTimeAndPriceDropItems()
     {
-        var alert = BuildAlert(DateTime.UtcNow.AddMinutes(-30), DateTime.UtcNow.AddMinutes(-20), DateTime.UtcNow.AddMinutes(-20));
-        var newerTime = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
+        var alert = BuildAlert(now.AddMinutes(-30), now.AddMinutes(-20), now.AddMinutes(-20));
+
         var items = new List<Item>
         {
-            BuildItem("item-1", newerTime),
-            BuildItem("item-2", newerTime.AddMinutes(1))
+            BuildItem("item-first-time", "first-time", now, 120),
+            BuildItem("item-price-drop", "price-drop", now.AddMinutes(1), 80),
+            BuildItem("item-no-drop", "no-drop", now.AddMinutes(2), 100),
+            BuildItem("item-higher-price", "higher-price", now.AddMinutes(3), 150),
+            BuildItem("item-null-price", "null-price", now.AddMinutes(4), null),
+            BuildItem("item-cached", "cached", now.AddMinutes(5), 99)
         };
+        _cache.SetString(alert.GetCacheKey(), JsonSerializer.Serialize(new List<string> { "item-cached" }));
+        _cache.SetString(GetPriceCacheKey(alert.GetCacheKey()), JsonSerializer.Serialize(new Dictionary<string, double>
+        {
+            ["item-price-drop"] = 100,
+            ["item-no-drop"] = 100,
+            ["item-higher-price"] = 140,
+            ["item-null-price"] = 110,
+            ["item-cached"] = 99
+        }));
 
         _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
         _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(items);
@@ -70,22 +84,30 @@ public class ItemSearcherTest
         await _sut.Execute();
 
         _eventBusMock.Verify(x => x.Publish(It.Is<List<DomainEvent>>(events =>
-            events.OfType<NewItemsFoundEvent>().Single().Items!.Count() == items.Count &&
-            events.OfType<NewItemsFoundEvent>().Single().UserId == alert.UserId)), Times.Once);
+            events.OfType<NewItemsFoundEvent>().Single().UserId == alert.UserId &&
+            events.OfType<NewItemsFoundEvent>().Single().Items!.Select(i => i.Id).OrderBy(x => x)
+                .SequenceEqual(new[] { "item-first-time", "item-price-drop" }.OrderBy(x => x)))), Times.Once);
 
         _alertRepositoryMock.Verify(x => x.Update(alert), Times.Once);
         Assert.NotNull(_cache.GetString(alert.GetCacheKey()));
+
+        var priceCache = JsonSerializer.Deserialize<Dictionary<string, double>>(
+            _cache.GetString(GetPriceCacheKey(alert.GetCacheKey()))!);
+        Assert.NotNull(priceCache);
+        Assert.Equal(80, priceCache!["item-price-drop"]);
+        Assert.Equal(150, priceCache["item-higher-price"]);
+        Assert.Equal(99, priceCache["item-cached"]);
     }
 
     [Fact]
-    public async Task Execute_WhenNoNewItems_DoesNotPublishOrCache_ButUpdatesLastSearchedAt()
+    public async Task Execute_WhenNoNewItems_DoesNotPublish_ButUpdatesLastSearchedAtAndCache()
     {
         var now = DateTime.UtcNow;
         var alert = BuildAlert(now, now, now);
         DateTime? lastSearchedAt = null;
         var items = new List<Item>
         {
-            BuildItem("item-1", now.AddMinutes(-10))
+            BuildItem("item-1", "item-1", now.AddMinutes(-10), 10)
         };
 
         _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
@@ -102,11 +124,15 @@ public class ItemSearcherTest
         _alertRepositoryMock.Verify(x => x.Update(It.IsAny<Alert>()), Times.Never);
         Assert.NotNull(lastSearchedAt);
         Assert.Equal(lastSearchedAt, alert.LastSearchedAt);
-        Assert.Null(_cache.GetString(alert.GetCacheKey()));
+        Assert.NotNull(_cache.GetString(alert.GetCacheKey()));
+        var priceCache = JsonSerializer.Deserialize<Dictionary<string, double>>(
+            _cache.GetString(GetPriceCacheKey(alert.GetCacheKey()))!);
+        Assert.NotNull(priceCache);
+        Assert.Equal(10, priceCache!["item-1"]);
     }
 
     [Fact]
-    public async Task Execute_SkipsItemsAlreadyInCache()
+    public async Task Execute_WhenItemsAreOnlyCached_DoesNotQueryHistoryAndDoesNotPublish()
     {
         var createdAt = DateTime.UtcNow;
         var alert = BuildAlert(createdAt.AddMinutes(-30), createdAt.AddMinutes(-20), createdAt.AddMinutes(-20));
@@ -114,7 +140,7 @@ public class ItemSearcherTest
         var cachedId = "item-cached";
         var items = new List<Item>
         {
-            BuildItem(cachedId, createdAt.AddMinutes(10))
+            BuildItem(cachedId, "cached", createdAt.AddMinutes(10), 30)
         };
 
         _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
@@ -160,7 +186,7 @@ public class ItemSearcherTest
             isActive, lastSearchedAt);
     }
 
-    private static Item BuildItem(string id, DateTime createdAt, DateTime? modifiedAt = null)
+    private static Item BuildItem(string id, string slug, DateTime createdAt, double? currentPrice, DateTime? modifiedAt = null)
     {
         return new Item
         {
@@ -169,15 +195,20 @@ public class ItemSearcherTest
             Title = "title",
             Description = "desc",
             CategoryId = 1,
-            Price = Price.Create(10, null),
+            Price = currentPrice.HasValue ? Price.Create(currentPrice.Value, null) : null,
             Images = new List<string>(),
             Location = Location.Create("city", "region"),
             Shipping = false,
             Favorited = false,
             Reserved = false,
-            WebSlug = $"slug-{id}",
+            WebSlug = slug,
             CreatedAt = new DateTimeOffset(createdAt).ToUnixTimeMilliseconds(),
             ModifiedAt = new DateTimeOffset(modifiedAt ?? createdAt).ToUnixTimeMilliseconds()
         };
+    }
+
+    private static string GetPriceCacheKey(string alertCacheKey)
+    {
+        return $"{alertCacheKey}:prices";
     }
 }
