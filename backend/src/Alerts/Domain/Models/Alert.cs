@@ -40,13 +40,13 @@ public sealed class Alert : AggregateRoot
 
     public string GetCacheKey() => Id.ToString();
 
-    public void NewSearch(List<Item>? wallapopItems, DateTime eventTimestamp, DateTime searchTimestamp)
+    public void NewSearch(List<LabeledAlertItem> labeledItems, DateTime eventTimestamp, DateTime searchTimestamp)
     {
-        if (wallapopItems is not null && wallapopItems.Count > 0)
+        if (labeledItems.Count > 0)
         {
             Record(new NewItemsFoundEvent(Guid.NewGuid().ToString(), eventTimestamp.ToString("o"), Id,
                 UserId,
-                wallapopItems));
+                labeledItems));
 
             RecordSearch(searchTimestamp);
         }
