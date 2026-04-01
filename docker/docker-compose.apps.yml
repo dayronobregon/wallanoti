@@ -10,7 +10,7 @@ services:
       - "5000:5000"
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
-      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_URLS: http://+:8080;http://+:5000
       ConnectionStrings__Postgres: Host=${POSTGRES_HOSTNAME:-postgres};Database=${POSTGRES_DATABASE:-wallanoti_db};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
       ConnectionStrings__Redis: ${REDIS_HOSTNAME:-redis}:${REDIS_PORT:-6379}
       RabbitMq__HostName: ${RABBITMQ_HOSTNAME:-rabbitmq}

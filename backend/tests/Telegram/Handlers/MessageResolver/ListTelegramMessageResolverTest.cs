@@ -55,7 +55,7 @@ public class ListTelegramMessageResolverTest
                 "iPhone",
                 It.Is<PushMessageOptions>(options =>
                     options.ProtectContent &&
-                    options.ActionButtons.Count == 2 &&
+                    options.ActionButtons.Length == 2 &&
                     options.ActionButtons[0].Text == "Editar (Próximamente)" &&
                     options.ActionButtons[0].CallbackData == $"edit:{alerts[0].Id}" &&
                     options.ActionButtons[1].Text == "Eliminar" &&

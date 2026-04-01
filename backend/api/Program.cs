@@ -212,6 +212,7 @@ app.UseMiddleware<UserContextMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
+//TODO asegurar el endpoint de metricas limitandolo por IP y autenticacion
 app.MapMetrics();
 app.MapHealthChecks("/health");
 

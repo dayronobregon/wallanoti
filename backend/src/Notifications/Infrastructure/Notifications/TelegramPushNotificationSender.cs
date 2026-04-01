@@ -91,7 +91,7 @@ public class TelegramPushNotificationSender : IPushNotificationSender
 
     private static IReplyMarkup? BuildReplyMarkup(PushMessageOptions? options)
     {
-        if (options is null || options.ActionButtons.Count == 0)
+        if (options is null || options.ActionButtons.IsEmpty)
         {
             return null;
         }
