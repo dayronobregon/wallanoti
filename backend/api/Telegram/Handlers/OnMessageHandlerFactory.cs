@@ -5,6 +5,7 @@ namespace Wallanoti.Api.Telegram.Handlers;
 
 public sealed class OnMessageHandlerFactory
 {
+    private readonly ILogger<OnMessageHandlerFactory> _logger;
     private readonly StartTelegramMessageResolver _startTelegramMessageResolver;
     private readonly NewAlertTelegramMessageResolver _newAlertTelegramMessageResolver;
     private readonly ListTelegramMessageResolver _listTelegramMessageResolver;
@@ -14,6 +15,7 @@ public sealed class OnMessageHandlerFactory
     private readonly ITelegramConversationRepository _conversationRepository;
 
     public OnMessageHandlerFactory(
+        ILogger<OnMessageHandlerFactory> logger,
         StartTelegramMessageResolver startTelegramMessageResolver,
         NewAlertTelegramMessageResolver newAlertTelegramMessageResolver,
         ListTelegramMessageResolver listTelegramMessageResolver,
@@ -22,6 +24,7 @@ public sealed class OnMessageHandlerFactory
         UnknownTelegramMessageResolver unknownTelegramMessageResolver,
         ITelegramConversationRepository conversationRepository)
     {
+        _logger = logger;
         _startTelegramMessageResolver = startTelegramMessageResolver;
         _newAlertTelegramMessageResolver = newAlertTelegramMessageResolver;
         _listTelegramMessageResolver = listTelegramMessageResolver;
@@ -33,48 +36,81 @@ public sealed class OnMessageHandlerFactory
 
     public async Task<IMessageResolver> HandleAsync(long chatId, string? messageText)
     {
-        // Determine the command token: first word if starts with "/", else null
         var token = messageText?.Trim();
         var isCommand = token?.StartsWith("/") == true;
-        string? commandToken = null;
-        if (isCommand && token is not null)
-        {
-            // Take the first whitespace-delimited token (e.g. "/alert@MyBot")
-            commandToken = token.Split(' ').FirstOrDefault();
+        var commandToken = NormalizeCommandToken(token, isCommand);
 
-            if (!string.IsNullOrEmpty(commandToken))
-            {
-                // Normalize Telegram group-chat commands like "/command@BotName" to "/command"
-                var atIndex = commandToken.IndexOf('@');
-                if (atIndex > 0)
-                {
-                    commandToken = commandToken.Substring(0, atIndex);
-                }
+        _logger.LogInformation(
+            "Telegram message routing started. chatId={ChatId}, isCommand={IsCommand}, command={Command}",
+            chatId,
+            isCommand,
+            commandToken ?? "none");
 
-                commandToken = commandToken.ToLower();
-            }
-        }
-        // /cancel is always handled first regardless of state
         if (commandToken == CancelTelegramMessageResolver.Command)
-            return _cancelTelegramMessageResolver;
+        {
+            _logger.LogInformation(
+                "Telegram message routing selected resolver. chatId={ChatId}, resolver={Resolver}, command={Command}",
+                chatId,
+                nameof(CancelTelegramMessageResolver),
+                commandToken);
 
-        // If not a command, check conversation state for free-text routing
+            return _cancelTelegramMessageResolver;
+        }
+
         if (!isCommand)
         {
             var state = await _conversationRepository.GetStateAsync(chatId);
-            if (state == ConversationState.AwaitingUrl)
-                return _alertUrlTelegramMessageResolver;
+            var selectedResolver = state == ConversationState.AwaitingUrl
+                ? (IMessageResolver)_alertUrlTelegramMessageResolver
+                : _unknownTelegramMessageResolver;
 
-            return _unknownTelegramMessageResolver;
+            _logger.LogInformation(
+                "Telegram message routing selected resolver. chatId={ChatId}, state={ConversationState}, resolver={Resolver}",
+                chatId,
+                state,
+                selectedResolver.GetType().Name);
+
+            return selectedResolver;
         }
 
-        // Command routing
-        return commandToken switch
+        IMessageResolver commandResolver = commandToken switch
         {
             StartTelegramMessageResolver.Command => _startTelegramMessageResolver,
             NewAlertTelegramMessageResolver.Command => _newAlertTelegramMessageResolver,
             ListTelegramMessageResolver.Command => _listTelegramMessageResolver,
             _ => _unknownTelegramMessageResolver
         };
+
+        _logger.LogInformation(
+            "Telegram message routing selected resolver. chatId={ChatId}, command={Command}, resolver={Resolver}",
+            chatId,
+            commandToken ?? "none",
+            commandResolver.GetType().Name);
+
+        return commandResolver;
+    }
+
+    private static string? NormalizeCommandToken(string? token, bool isCommand)
+    {
+        if (!isCommand || token is null)
+        {
+            return null;
+        }
+
+        var commandToken = token.Split(' ').FirstOrDefault();
+
+        if (string.IsNullOrWhiteSpace(commandToken))
+        {
+            return null;
+        }
+
+        var atIndex = commandToken.IndexOf('@');
+
+        if (atIndex > 0)
+        {
+            commandToken = commandToken[..atIndex];
+        }
+
+        return commandToken.ToLowerInvariant();
     }
 }

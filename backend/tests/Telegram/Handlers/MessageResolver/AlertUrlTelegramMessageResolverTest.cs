@@ -1,20 +1,20 @@
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Telegram.Bot;
-using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
 using Wallanoti.Api.Telegram.Conversation;
 using Wallanoti.Api.Telegram.Handlers.MessageResolver;
 using Wallanoti.Src.Alerts.Application.CreateAlert;
-using Wallanoti.Src.Notifications.Infrastructure.Telegram;
+using Wallanoti.Src.Notifications.Domain;
 
 namespace Wallanoti.Tests.Telegram.Handlers.MessageResolver;
 
 public class AlertUrlTelegramMessageResolverTest
 {
-    private readonly Mock<ITelegramBotClient> _botClientMock = new();
-    private readonly Mock<ITelegramBotConnection> _botConnectionMock = new();
+    private const string StandardFriendlyErrorMessage = "Ha ocurrido un error. Será notificado al administrador.";
+
+    private readonly Mock<IPushNotificationSender> _pushNotificationSenderMock = new();
     private readonly Mock<ITelegramConversationRepository> _conversationRepoMock = new();
     private readonly Mock<IServiceScopeFactory> _scopeFactoryMock = new();
     private readonly Mock<IMediator> _mediatorMock = new();
@@ -23,10 +23,9 @@ public class AlertUrlTelegramMessageResolverTest
 
     public AlertUrlTelegramMessageResolverTest()
     {
-        _botConnectionMock.Setup(x => x.Client()).Returns(_botClientMock.Object);
-        _botClientMock
-            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Message());
+        _pushNotificationSenderMock
+            .Setup(x => x.Notify(It.IsAny<long>(), It.IsAny<string>()))
+            .Returns(Task.CompletedTask);
 
         var serviceProviderMock = new Mock<IServiceProvider>();
         serviceProviderMock
@@ -46,8 +45,9 @@ public class AlertUrlTelegramMessageResolverTest
 
         _sut = new AlertUrlTelegramMessageResolver(
             _scopeFactoryMock.Object,
-            _botConnectionMock.Object,
-            _conversationRepoMock.Object);
+            _pushNotificationSenderMock.Object,
+            _conversationRepoMock.Object,
+            NullLogger<AlertUrlTelegramMessageResolver>.Instance);
     }
 
     [Fact]
@@ -58,8 +58,8 @@ public class AlertUrlTelegramMessageResolverTest
 
         await _sut.Execute(message);
 
-        _botClientMock.Verify(
-            x => x.SendRequest(It.IsAny<SendMessageRequest>(), It.IsAny<CancellationToken>()),
+        _pushNotificationSenderMock.Verify(
+            x => x.Notify(chatId, It.IsAny<string>()),
             Times.Once);
         _conversationRepoMock.Verify(x => x.ClearAsync(It.IsAny<long>()), Times.Never);
         _mediatorMock.Verify(x => x.Send(It.IsAny<CreateAlertCommand>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -73,8 +73,8 @@ public class AlertUrlTelegramMessageResolverTest
 
         await _sut.Execute(message);
 
-        _botClientMock.Verify(
-            x => x.SendRequest(It.IsAny<SendMessageRequest>(), It.IsAny<CancellationToken>()),
+        _pushNotificationSenderMock.Verify(
+            x => x.Notify(chatId, It.IsAny<string>()),
             Times.Once);
         _conversationRepoMock.Verify(x => x.ClearAsync(It.IsAny<long>()), Times.Never);
         _mediatorMock.Verify(x => x.Send(It.IsAny<CreateAlertCommand>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -100,5 +100,27 @@ public class AlertUrlTelegramMessageResolverTest
             Times.Once);
 
         _conversationRepoMock.Verify(x => x.ClearAsync(chatId), Times.Once);
+        _pushNotificationSenderMock.Verify(
+            x => x.Notify(chatId, "Alerta \"iphone 14\" creada ✅"),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Execute_WhenCreateAlertFails_SendsFriendlyErrorAndKeepsState()
+    {
+        const long chatId = 777L;
+        const string url = "https://es.wallapop.com/search?keywords=nintendo+switch";
+        var message = new Message { Chat = new Chat { Id = chatId }, Text = url };
+
+        _mediatorMock
+            .Setup(x => x.Send(It.IsAny<CreateAlertCommand>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("db timeout"));
+
+        await _sut.Execute(message);
+
+        _conversationRepoMock.Verify(x => x.ClearAsync(It.IsAny<long>()), Times.Never);
+        _pushNotificationSenderMock.Verify(
+            x => x.Notify(chatId, StandardFriendlyErrorMessage),
+            Times.Once);
     }
 }

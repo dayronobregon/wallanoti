@@ -2,6 +2,7 @@ using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 using Wallanoti.Src.Notifications.Domain;
 using Wallanoti.Src.Notifications.Infrastructure.Telegram;
 
@@ -32,6 +33,8 @@ public class TelegramPushNotificationSender : IPushNotificationSender
                 botClient,
                 notification.UserId,
                 notification.FormattedString(),
+                false,
+                null,
                 ParseMode.Html,
                 CancellationToken.None);
             return;
@@ -50,12 +53,20 @@ public class TelegramPushNotificationSender : IPushNotificationSender
 
     public Task Notify(long userId, string message)
     {
+        return Notify(userId, message, null);
+    }
+
+    public Task Notify(long userId, string message, PushMessageOptions? options)
+    {
         var botClient = _telegramConnection.Client();
+        var replyMarkup = BuildReplyMarkup(options);
 
         return SendMessageWithRetry(
             botClient,
             userId,
             message,
+            options?.ProtectContent ?? false,
+            replyMarkup,
             null,
             CancellationToken.None);
     }
@@ -64,14 +75,32 @@ public class TelegramPushNotificationSender : IPushNotificationSender
         ITelegramBotClient botClient,
         long userId,
         string message,
+        bool protectContent,
+        IReplyMarkup? replyMarkup,
         ParseMode? parseMode,
         CancellationToken cancellationToken)
     {
         return ExecuteWithRetry(
             ct => parseMode.HasValue
-                ? botClient.SendMessage(userId, message, parseMode: parseMode.Value, cancellationToken: ct)
-                : botClient.SendMessage(userId, message, cancellationToken: ct),
+                ? botClient.SendMessage(userId, message, parseMode: parseMode.Value, protectContent: protectContent,
+                    replyMarkup: replyMarkup, cancellationToken: ct)
+                : botClient.SendMessage(userId, message, protectContent: protectContent, replyMarkup: replyMarkup,
+                    cancellationToken: ct),
             cancellationToken);
+    }
+
+    private static IReplyMarkup? BuildReplyMarkup(PushMessageOptions? options)
+    {
+        if (options is null || options.ActionButtons.IsEmpty)
+        {
+            return null;
+        }
+
+        var keyboardButtons = options.ActionButtons
+            .Select(button => InlineKeyboardButton.WithCallbackData(button.Text, button.CallbackData))
+            .ToArray();
+
+        return new InlineKeyboardMarkup(keyboardButtons);
     }
 
     private static async Task SendMediaGroupWithRetry(

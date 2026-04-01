@@ -1,32 +1,31 @@
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using Wallanoti.Api.Telegram.Conversation;
-using Wallanoti.Src.Notifications.Infrastructure.Telegram;
+using Wallanoti.Src.Notifications.Domain;
 
 namespace Wallanoti.Api.Telegram.Handlers.MessageResolver;
 
-public sealed class NewAlertTelegramMessageResolver : IMessageResolver
+public sealed class NewAlertTelegramMessageResolver : SafeTelegramMessageResolver
 {
     public const string Command = "/alert";
-
-    private readonly ITelegramBotConnection _botConnection;
+    
     private readonly ITelegramConversationRepository _conversationRepository;
 
     public NewAlertTelegramMessageResolver(
-        ITelegramBotConnection botConnection,
-        ITelegramConversationRepository conversationRepository)
+        IPushNotificationSender pushNotificationSender,
+        ITelegramConversationRepository conversationRepository,
+        ILogger<NewAlertTelegramMessageResolver> logger)
+        : base(pushNotificationSender, logger)
     {
-        _botConnection = botConnection;
         _conversationRepository = conversationRepository;
     }
 
-    public async Task Execute(Message message)
+    protected override async Task ExecuteCore(Message message)
     {
         var chatId = message.Chat.Id;
 
         await _conversationRepository.SetStateAsync(chatId, ConversationState.AwaitingUrl);
 
-        await _botConnection.Client().SendMessage(chatId,
+        await PushNotificationSender.Notify(chatId,
             "Envíame la URL de búsqueda de Wallapop 🔗");
     }
 }

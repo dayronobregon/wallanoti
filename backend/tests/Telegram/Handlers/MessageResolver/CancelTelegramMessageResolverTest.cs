@@ -1,29 +1,29 @@
 using Moq;
-using Telegram.Bot;
-using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
+using Microsoft.Extensions.Logging.Abstractions;
 using Wallanoti.Api.Telegram.Conversation;
 using Wallanoti.Api.Telegram.Handlers.MessageResolver;
-using Wallanoti.Src.Notifications.Infrastructure.Telegram;
+using Wallanoti.Src.Notifications.Domain;
 
 namespace Wallanoti.Tests.Telegram.Handlers.MessageResolver;
 
 public class CancelTelegramMessageResolverTest
 {
-    private readonly Mock<ITelegramBotClient> _botClientMock = new();
-    private readonly Mock<ITelegramBotConnection> _botConnectionMock = new();
+    private readonly Mock<IPushNotificationSender> _pushNotificationSenderMock = new();
     private readonly Mock<ITelegramConversationRepository> _conversationRepoMock = new();
 
     private readonly CancelTelegramMessageResolver _sut;
 
     public CancelTelegramMessageResolverTest()
     {
-        _botConnectionMock.Setup(x => x.Client()).Returns(_botClientMock.Object);
-        _botClientMock
-            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Message());
+        _pushNotificationSenderMock
+            .Setup(x => x.Notify(It.IsAny<long>(), It.IsAny<string>()))
+            .Returns(Task.CompletedTask);
 
-        _sut = new CancelTelegramMessageResolver(_botConnectionMock.Object, _conversationRepoMock.Object);
+        _sut = new CancelTelegramMessageResolver(
+            _pushNotificationSenderMock.Object,
+            _conversationRepoMock.Object,
+            NullLogger<CancelTelegramMessageResolver>.Instance);
     }
 
     [Fact]
@@ -39,8 +39,8 @@ public class CancelTelegramMessageResolverTest
         await _sut.Execute(message);
 
         _conversationRepoMock.Verify(x => x.ClearAsync(It.IsAny<long>()), Times.Never);
-        _botClientMock.Verify(
-            x => x.SendRequest(It.IsAny<SendMessageRequest>(), It.IsAny<CancellationToken>()),
+        _pushNotificationSenderMock.Verify(
+            x => x.Notify(chatId, "No tienes ninguna operación en curso."),
             Times.Once);
     }
 
@@ -60,8 +60,8 @@ public class CancelTelegramMessageResolverTest
         await _sut.Execute(message);
 
         _conversationRepoMock.Verify(x => x.ClearAsync(chatId), Times.Once);
-        _botClientMock.Verify(
-            x => x.SendRequest(It.IsAny<SendMessageRequest>(), It.IsAny<CancellationToken>()),
+        _pushNotificationSenderMock.Verify(
+            x => x.Notify(chatId, "Operación cancelada ✅"),
             Times.Once);
     }
 }

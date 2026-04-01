@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.RateLimiting;
+using Prometheus;
 using Wallanoti.Api;
 using Wallanoti.Api.Extension.DependencyInjection;
 using Wallanoti.Api.Middlewares.Auth;
@@ -30,19 +31,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"])),
             ClockSkew = TimeSpan.Zero
         };
-        
+
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
             {
                 var accessToken = context.Request.Query["access_token"];
-        
+
                 var path = context.HttpContext.Request.Path;
                 if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments(WebNotificationHub.HubName))
                 {
                     context.Token = accessToken;
                 }
-                
+
                 return Task.CompletedTask;
             }
         };
@@ -51,6 +52,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddSingleton<IUserIdProvider, TelegramUserIdProvider>();
 
 builder.Services.AddHealthChecks();
+
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -202,6 +204,7 @@ app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
 app.UseRateLimiter();
+app.UseHttpMetrics();
 
 app.UseAuthentication();
 app.UseMiddleware<UserContextMiddleware>();
@@ -209,6 +212,8 @@ app.UseMiddleware<UserContextMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
+//TODO asegurar el endpoint de metricas limitandolo por IP y autenticacion
+app.MapMetrics();
 app.MapHealthChecks("/health");
 
 app.Services.UseScheduler(scheduler =>
