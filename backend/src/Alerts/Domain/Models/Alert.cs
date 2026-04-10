@@ -42,14 +42,13 @@ public sealed class Alert : AggregateRoot
 
     public void NewSearch(List<Item>? wallapopItems, DateTime eventTimestamp, DateTime searchTimestamp)
     {
-        if (wallapopItems is not null && wallapopItems.Count > 0)
-        {
-            Record(new NewItemsFoundEvent(Guid.NewGuid().ToString(), eventTimestamp.ToString("o"), Id,
-                UserId,
-                wallapopItems));
+        if (wallapopItems is null || wallapopItems.Count <= 0) return;
+        
+        Record(new NewItemsFoundEvent(Guid.NewGuid().ToString(), eventTimestamp.ToString("o"), Id,
+            UserId,
+            wallapopItems));
 
-            RecordSearch(searchTimestamp);
-        }
+        RecordSearch(searchTimestamp);
     }
 
     public void RecordSearch(DateTime timestamp)

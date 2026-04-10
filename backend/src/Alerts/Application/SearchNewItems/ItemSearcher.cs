@@ -67,29 +67,34 @@ public sealed class ItemSearcher
                 continue;
             }
 
-            var cachedItems = GetCachedItems(alert.GetCacheKey());
+            var itemAlreadyFound = ItemsAlreadyFound(alert.GetCacheKey());
 
             var newItems = (from item in wallapopItems
                 let itemCreatedAt = DateTimeOffset.FromUnixTimeMilliseconds(item.CreatedAt).DateTime
                 where itemCreatedAt.CompareTo(alert.CreatedAt) >= 0 &&
-                      !AlreadyFound(cachedItems, item.Id)
+                      !AlreadyFound(itemAlreadyFound, item.Id)
                 select item).ToList();
 
             var now = _timeProvider.GetUtcNow().UtcDateTime;
 
+            //No encuentra nuevos Articulos para notificar
             if (newItems.Count == 0)
             {
                 alert.RecordSearch(now);
                 await _alertRepository.UpdateLastSearchedAt(alert.Id, alert.LastSearchedAt!.Value);
                 continue;
             }
-
-            //Añadir una nueva busqueda con los nuevos items encontrados
+            
+            //Encuentra nuevos articulos para notificar
             alert.NewSearch(newItems, now, now);
-
-            //Guardar en cache los ids de los items encontrados
+            
+            const int maxCachedIds = 1000;
+            var allKnownIds = itemAlreadyFound
+                .Union(wallapopItems.Select(x => x.Id))
+                .TakeLast(maxCachedIds)
+                .ToList();
             await _cache.SetAsync(alert.GetCacheKey(),
-                Encoding.UTF8.GetBytes(JsonSerializer.Serialize(wallapopItems.Select(x => x.Id))));
+                Encoding.UTF8.GetBytes(JsonSerializer.Serialize(allKnownIds)));
 
             await _alertRepository.Update(alert);
 
@@ -102,7 +107,7 @@ public sealed class ItemSearcher
         return elementsInCache.Count != 0 && elementsInCache.Contains(wallapopItemId);
     }
 
-    private List<string> GetCachedItems(string alertId)
+    private List<string> ItemsAlreadyFound(string alertId)
     {
         var cached = _cache.GetString(alertId);
 

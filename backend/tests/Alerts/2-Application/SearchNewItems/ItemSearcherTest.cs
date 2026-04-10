@@ -154,6 +154,42 @@ public class ItemSearcherTest
             Times.Once);
     }
 
+    [Fact]
+    public async Task Execute_WhenPreviouslyKnownItemReappearsInFeed_DoesNotNotify()
+    {
+        // Escenario: item-A fue notificado en ciclo 1, rotó fuera del feed en ciclo 2,
+        // y reaparece en ciclo 3. No debe generar una segunda notificación.
+        var createdAt = DateTime.UtcNow.AddHours(-1);
+        var alert = BuildAlert(createdAt, createdAt, createdAt);
+
+        // Ciclo 1: item-A y item-B devueltos por Wallapop, se notifican y se cachean
+        var itemA = BuildItem("item-A", createdAt.AddMinutes(10));
+        var itemB = BuildItem("item-B", createdAt.AddMinutes(11));
+        _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
+        _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(new List<Item> { itemA, itemB });
+        await _sut.Execute();
+
+        // Ciclo 2: solo item-C aparece (A y B rotaron fuera del feed de 40 items)
+        var itemC = BuildItem("item-C", createdAt.AddMinutes(20));
+        _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(new List<Item> { itemC });
+        _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
+        await _sut.Execute();
+
+        // Ciclo 3: item-A reaparece en el feed (Wallapop lo vuelve a indexar)
+        _wallapopRepositoryMock.Setup(x => x.Latest(alert.Url)).ReturnsAsync(new List<Item> { itemA });
+        _alertRepositoryMock.Setup(x => x.All()).ReturnsAsync(new[] { alert });
+        await _sut.Execute();
+
+        // item-A no debe generar una tercera publicación de evento
+        // Solo deben haberse publicado 2 eventos: ciclo 1 (A+B) y ciclo 2 (C)
+        _eventBusMock.Verify(
+            x => x.Publish(It.Is<List<DomainEvent>>(events =>
+                events.OfType<NewItemsFoundEvent>().Any(e =>
+                    e.Items!.Any(i => i.Id == "item-A")))),
+            Times.Once,
+            "item-A fue notificado más de una vez");
+    }
+
     private static Alert BuildAlert(DateTime createdAt, DateTime? updatedAt = null, DateTime? lastSearchedAt = null, bool isActive = true)
     {
         return new Alert(Guid.NewGuid(), 1, "alert", "https://es.wallapop.com/item/slug", createdAt, updatedAt,
