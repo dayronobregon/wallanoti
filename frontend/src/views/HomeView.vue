@@ -19,7 +19,8 @@
                 @blur="startTyping"
                 type="text"
                 :placeholder="currentPlaceholder"
-                class="w-full pl-20 pr-6 py-6 text-lg border-2 border-gray-300/50 bg-white/80 backdrop-blur-sm rounded-2xl focus:ring-4 focus:ring-indigo-500/30 focus:border-indigo-500 placeholder-gray-400 shadow-xl transition-all duration-300"
+                :disabled="isCreatingAlert"
+                class="w-full pl-20 pr-6 py-6 text-lg border-2 border-gray-300/50 bg-white/80 backdrop-blur-sm rounded-2xl focus:ring-4 focus:ring-indigo-500/30 focus:border-indigo-500 placeholder-gray-400 shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -143,6 +144,7 @@ const notificationsLoaded = ref(false)
 const alertDescription = ref('')
 const currentPlaceholder = ref('')
 const isTyping = ref(true)
+const isCreatingAlert = ref(false)
 const notificationsSection = ref<HTMLElement | null>(null)
 const alertManagementSection = ref<HTMLElement | null>(null)
 const sortOrder = ref<'asc' | 'desc'>('desc')
@@ -275,11 +277,21 @@ async function fetchAlerts() {
 }
 
 async function createAlertWithAI() {
-  if (!alertDescription.value.trim()) return
+  if (!alertDescription.value.trim() || isCreatingAlert.value) return
 
-  // TODO: Implement AI alert creation
-  console.log('Crear alerta con IA:', alertDescription.value)
-  alertDescription.value = ''
+  try {
+    isCreatingAlert.value = true
+    const result = await apiClient.alert.postAlertFromNaturalLanguage(alertDescription.value.trim())
+    console.log('Alerta creada con IA:', result)
+    alertDescription.value = ''
+    await fetchAlerts()
+  } catch (error: any) {
+    console.error('Error al crear alerta con IA:', error)
+    const message = error?.message || 'Error al crear la alerta. Por favor, intenta de nuevo.'
+    alert(message)
+  } finally {
+    isCreatingAlert.value = false
+  }
 }
 
 function loadNotifications() {

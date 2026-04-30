@@ -52,6 +52,27 @@ El sistema está organizado en **Bounded Contexts** siguiendo DDD:
 **📚 [Ver documentación completa de arquitectura](docs/ARCHITECTURE.md)**  
 **🎨 [Ver diagramas C4 completos (Mermaid)](docs/c4-diagrams/complete-c4-diagram.md)** ⭐ NUEVO  
 **📁 [Más diagramas (PlantUML, Draw.io)](docs/c4-diagrams/)**
+**🤖 [NER - Extracción de entidades](docs/NER.md)** ⭐ NUEVO
+
+---
+
+## 🤖 **NER (Named Entity Recognition)**
+
+### ¿Qué es?
+
+Sistema de extracción de entidades en **Python/spaCy** que identifica automáticamente:
+- **Producto** (ej. "iPhone 15", "televisor 50 pulgadas")
+- **Ubicación** (ej. "Murcia", "Madrid")
+- **Precio mínimo y máximo** (ej. "más de 200€", "menos de 800€")
+
+**Ejemplo:**
+```
+Input:  "quiero un televisor de 40 pulgadas por menos de 500 en murcia"
+Output: {product: "televisor de 40 pulgadas", location: "murcia", max_price: "500"}
+```
+
+**📚 [Documentación completa NER](docs/NER.md)**  
+**🧠 [Guía de entrenamiento](docs/NER.md#entrenamiento)**
 
 ---
 

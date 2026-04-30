@@ -1,12 +1,18 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http;
+using Polly;
+using Polly.Extensions.Http;
 using Wallanoti.Src.AlertCounter.Application.Increment;
 using Wallanoti.Src.AlertCounter.Domain;
 using Wallanoti.Src.AlertCounter.Infrastructure.Percistence;
 using Wallanoti.Src.Alerts.Domain;
 using Wallanoti.Src.Alerts.Domain.Models;
+using Wallanoti.Src.Alerts.Domain.Services;
 using Wallanoti.Src.Alerts.Infrastructure.Percistence;
 using Wallanoti.Src.Alerts.Infrastructure.Percistence.Wallapop;
+using Wallanoti.Src.Alerts.Infrastructure.Services;
 using Wallanoti.Src.Notifications.Application.Notify.Telegram;
 using Wallanoti.Src.Notifications.Application.Notify.Web;
 using Wallanoti.Src.Notifications.Application.SaveOnNewItemsFound;
@@ -24,7 +30,7 @@ namespace Wallanoti.Api.Extension.DependencyInjection;
 
 public static class Infrastructure
 {
-    internal static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         //Cache
         services.AddCache(configuration);
@@ -44,10 +50,41 @@ public static class Infrastructure
         //SignalR
         services.AddSignalR();
 
+        //NER Service
+        services.AddNerServices(configuration);
+
         //EventBus
         AddEventBus(services, configuration);
 
         return services;
+    }
+
+    private static IServiceCollection AddNerServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        // Bind NerService options from configuration
+        var nerOptions = configuration.GetSection("NerService").Get<NerServiceOptions>()
+            ?? throw new InvalidOperationException("NerService configuration section is missing.");
+        services.AddSingleton(nerOptions);
+
+        // Register HttpClient with Polly retry policy for NER service
+        services.AddHttpClient("NerService", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(nerOptions.TimeoutSeconds);
+        })
+        .AddPolicyHandler(GetRetryPolicy());
+
+        // NER Service
+        services.AddScoped<INerService, HuggingFaceNerService>();
+        services.AddScoped<IWallapopUrlBuilder, WallapopUrlBuilder>();
+
+        return services;
+    }
+
+    private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+    {
+        return HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
     }
 
     private static IServiceCollection AddEventBus(this IServiceCollection services,

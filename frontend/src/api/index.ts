@@ -11,6 +11,7 @@ export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { AlertCounter } from './models/AlertCounter';
+export type { CreateAlertFromNaturalLanguageResponse } from './models/CreateAlertFromNaturalLanguageResponse';
 export type { GetAlertsByUserIdResponse } from './models/GetAlertsByUserIdResponse';
 export type { LoginRequest } from './models/LoginRequest';
 export type { NotificationResponse } from './models/NotificationResponse';
