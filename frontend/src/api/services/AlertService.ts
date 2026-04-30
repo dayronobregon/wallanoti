@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { AlertCounter } from '../models/AlertCounter';
+import type { CreateAlertFromNaturalLanguageResponse } from '../models/CreateAlertFromNaturalLanguageResponse';
 import type { GetAlertsByUserIdResponse } from '../models/GetAlertsByUserIdResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -99,6 +100,28 @@ export class AlertService {
             errors: {
                 401: `Unauthorized`,
                 404: `Not Found`,
+            },
+        });
+    }
+    /**
+     * @param naturalLanguageQuery
+     * @returns CreateAlertFromNaturalLanguageResponse Created
+     * @throws ApiError
+     */
+    public postAlertFromNaturalLanguage(
+        naturalLanguageQuery: string,
+    ): CancelablePromise<CreateAlertFromNaturalLanguageResponse> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/Alert/from-natural-language',
+            body: {
+                'naturalLanguageQuery': naturalLanguageQuery,
+            },
+            errors: {
+                400: `Bad Request`,
+                401: `Unauthorized`,
+                422: `Unprocessable Entity`,
+                503: `Service Unavailable`,
             },
         });
     }

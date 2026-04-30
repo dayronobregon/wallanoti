@@ -119,3 +119,56 @@ docker compose -f docker-compose.yml up -d
 - `initdb/` se monta completo en Postgres para ejecutar todos los `.sql`.
 - El frontend se sirve con nginx y hace proxy de `/api/*` y `/hub/*` al backend.
 - La configuración por defecto usa credenciales de desarrollo. **Cambia las credenciales en producción**.
+
+---
+
+## 🧠 Entrenar el modelo NER en producción
+
+El modelo **NER (Named Entity Recognition)** se entrena específicamente en cada servidor porque:
+
+- **Tamaño**: Los modelos son grandes (100-500MB)
+- **Personalización**: Cada servidor puede tener su propio dataset
+- **Optimización**: Se ejecuta en el entorno final con recursos disponibles
+
+### 1. Acceder al contenedor
+
+```bash
+docker exec -it wallanoti-api bash
+cd ner
+source .venv/bin/activate
+```
+
+### 2. Entrenar el modelo
+
+```bash
+# Fine-tuning (recomendado - mejor precisión)
+cd training
+python train_core.py
+
+# O entrenamiento desde cero
+python train.py
+```
+
+### 3. Verificar modelo generado
+
+```bash
+# Ver modelos generados
+ls -lh ../models/
+
+# Ejemplo: ner_core_v1 (fine-tuned) ~= 250MB
+```
+
+### 4. Verificar endpoint después del entrenamiento
+
+Si el servidor API está corriendo, recargar el modelo requiere reiniciar el contenedor:
+
+```bash
+# Reiniciar contenedor API
+docker compose -f docker-compose.yml restart api
+```
+
+### Notas importantes
+
+- **No versionar modelos**: Los modelos se generan en el servidor
+- **Entrenar solo cuando hay cambios**: No es necesario entrenar en cada deployment
+- **Models folder en `.gitignore`**: Todo contenido en `ner/models/` está excluido del repositorio

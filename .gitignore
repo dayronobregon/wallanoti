@@ -2,7 +2,6 @@
 *.*~
 project.lock.json
 .DS_Store
-*.pyc
 nupkg/
 
 # Visual Studio Code
@@ -41,8 +40,6 @@ bld/
 msbuild.log
 msbuild.err
 msbuild.wrn
-
-*.env
 
 # Frontend/Vue.js
 frontend/node_modules/
@@ -91,6 +88,78 @@ backend/wwwroot/dist/
 backend/TestResults/
 backend/BenchmarkDotNet.Artifacts/
 backend/*.DotSettings.user
+
+# Python (NER)
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+*.whl
+build/
+*.eggs/
+.eggs/
+pip-wheel-metadata/
+sourceform/
+*.spec.bak
+site.py
+.pyenv
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+*.log
+
+# spaCy / NER models (ENTRENADOS EN SERVER, NO VERSIONAR)
+ner/models/
+models/
+*.model
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+pipenv/
+
+# poetry
+poetry.lock
+.pytest_cache/
+
+# tox
+tox.ini
+.tox/
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+rope
+
+# .env files (todo lo que contenga credenciales sensibles)
+*.env
+!.env.example
+
 # START AI Agent Symlinks
 .claude/commands/
 .claude/skills
